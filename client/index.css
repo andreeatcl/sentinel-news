@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    sans-serif;
+  background: #080a0e;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* ── Leaflet dark mode inversion ── */
+.leaflet-layer,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out,
+.leaflet-control-attribution {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* Keep our GeoJSON overlays un-inverted */
+.leaflet-overlay-pane {
+  filter: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1017;
+}
+::-webkit-scrollbar-thumb {
+  background: #2e3850;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d80027;
+}
+
+/* Leaflet container fill */
+.leaflet-container {
+  background: #080a0e !important;
+  width: 100%;
+  height: 100%;
+}
+
+/* Pulsing dot for live indicator */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Sidebar slide-in */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.sidebar-enter {
+  animation: slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Card shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #141820 25%, #1c2130 50%, #141820 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+/* Search bar glow on focus */
+.search-glow:focus-within {
+  box-shadow:
+    0 0 0 1px #d8002744,
+    0 0 20px #d8002722;
+}
