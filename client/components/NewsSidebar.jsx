@@ -25,10 +25,12 @@ export default function NewsSidebar({
   timeRange,
   useTopSourcesOnly,
   onTopSourcesToggle,
+  onSaveSearch,
   isMobile = false,
 }) {
   const [queryPreview, setQueryPreview] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const availableKeywords = useMemo(
     () => (selectedCountry ? getCountryKeywordOptions(selectedCountry) : []),
@@ -51,6 +53,12 @@ export default function NewsSidebar({
         queryOptions,
       });
     }
+  }
+
+  function handleSaveSearchClick() {
+    onSaveSearch();
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 1200);
   }
 
   function clearKeywordQuery() {
@@ -93,12 +101,23 @@ export default function NewsSidebar({
             </p>
           )}
         </div>
-        <button
-          onClick={onClose}
-          className="text-carbon-500 hover:text-white transition-colors text-xl leading-none w-8 h-8 flex items-center justify-center"
-        >
-          ×
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {selectedCountry && (
+            <button
+              onClick={handleSaveSearchClick}
+              title="Save this search"
+              className="text-carbon-500 hover:text-signal-amber transition-colors text-lg leading-none w-8 h-8 flex items-center justify-center"
+            >
+              {savedFlash ? "✓" : "☆"}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="text-carbon-500 hover:text-white transition-colors text-xl leading-none w-8 h-8 flex items-center justify-center"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
       <SidebarFilterBar

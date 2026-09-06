@@ -4,6 +4,8 @@
 
 const STORAGE_KEYS = {
   apiKeys: "sentinel.apiKeys",
+  favorites: "sentinel.favorites",
+  savedSearches: "sentinel.savedSearches",
 };
 
 function read(key, fallback) {
@@ -36,4 +38,80 @@ export function setApiKeys(keys) {
 export function hasAnyApiKey() {
   const { primary, backup } = getApiKeys();
   return Boolean(primary || backup);
+}
+
+// favorites are saved article links
+// kept generic to accommodate for GDELT results
+export function getFavorites() {
+  return read(STORAGE_KEYS.favorites, []);
+}
+
+export function isFavorite(url) {
+  return getFavorites().some((item) => item.url === url);
+}
+
+export function addFavorite(article) {
+  if (!article?.url) return;
+  const current = getFavorites();
+  if (current.some((item) => item.url === article.url)) return;
+
+  const favorite = {
+    id: article.url,
+    url: article.url,
+    title: article.title || "",
+    sourceName: article.source?.name || "",
+    savedAt: new Date().toISOString(),
+  };
+  write(STORAGE_KEYS.favorites, [favorite, ...current]);
+}
+
+export function removeFavorite(url) {
+  const next = getFavorites().filter((item) => item.url !== url);
+  write(STORAGE_KEYS.favorites, next);
+}
+
+// saved searches remember what params to re-run
+export function getSavedSearches() {
+  return read(STORAGE_KEYS.savedSearches, []);
+}
+
+export function addSavedSearch({ label, topic, extraKeywords, queryOptions }) {
+  if (!topic) return;
+  const savedSearch = {
+    id: `${Date.now()}`,
+    label: label || topic,
+    topic,
+    extraKeywords: extraKeywords || "",
+    queryOptions: queryOptions || {},
+    createdAt: new Date().toISOString(),
+  };
+  write(STORAGE_KEYS.savedSearches, [savedSearch, ...getSavedSearches()]);
+  return savedSearch;
+}
+
+export function removeSavedSearch(id) {
+  const next = getSavedSearches().filter((item) => item.id !== id);
+  write(STORAGE_KEYS.savedSearches, next);
+}
+
+// export/import used to counter Safari's data wipeout
+export function exportData() {
+  return {
+    exportedAt: new Date().toISOString(),
+    apiKeys: getApiKeys(),
+    favorites: getFavorites(),
+    savedSearches: getSavedSearches(),
+  };
+}
+
+// overwrites current data with data from the imported file
+export function importData(data) {
+  if (!data || typeof data !== "object") {
+    throw new Error("That file doesn't look like a Sentinel backup.");
+  }
+  if (data.apiKeys) setApiKeys({ ...DEFAULT_API_KEYS, ...data.apiKeys });
+  if (Array.isArray(data.favorites))
+    write(STORAGE_KEYS.favorites, data.favorites);
+  if (Array.isArray(data.savedSearches))
+    write(STORAGE_KEYS.savedSearches, data.savedSearches);
 }

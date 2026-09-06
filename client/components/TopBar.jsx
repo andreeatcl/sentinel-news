@@ -1,4 +1,5 @@
 import { useState } from "react";
+import TopBarIconButton from "./TopBarIconButton";
 
 export default function TopBar({
   onSearch,
@@ -7,6 +8,9 @@ export default function TopBar({
   activeQuery,
   onSourcesClick,
   onKeysClick,
+  onFavoritesClick,
+  onSavedSearchesClick,
+  onBackupClick,
   isMobile = false,
 }) {
   const [input, setInput] = useState("");
@@ -41,7 +45,7 @@ export default function TopBar({
         className="pointer-events-auto flex-1 max-w-xl search-glow min-w-0"
       >
         <div className="flex items-center bg-carbon-900/95 border border-carbon-600/60 rounded backdrop-blur-sm overflow-hidden">
-          <span className="pl-3 text-carbon-500 font-mono text-xs select-none text-signal-cyan">
+          <span className="pl-3 font-mono text-xs select-none text-signal-cyan">
             ⌕
           </span>
           <input
@@ -91,27 +95,37 @@ export default function TopBar({
         )}
       </div>
 
-      {/* API keys button */}
-      <button
-        onClick={onKeysClick}
-        className="pointer-events-auto flex items-center gap-2 bg-carbon-900/95 border border-carbon-600/60 rounded px-2.5 py-2 backdrop-blur-sm hover:border-signal-cyan/60 hover:bg-signal-cyan/5 transition-all group shrink-0"
-        title="API keys"
-      >
+      {/* [[TO REPLACE]] icon buttons */}
+      <TopBarIconButton onClick={onKeysClick} title="API keys">
         <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
           🔑
         </span>
-      </button>
+      </TopBarIconButton>
 
-      {/* Top Sources button */}
-      <button
-        onClick={onSourcesClick}
-        className="pointer-events-auto flex items-center gap-2 bg-carbon-900/95 border border-carbon-600/60 rounded px-2.5 py-2 backdrop-blur-sm hover:border-signal-cyan/60 hover:bg-signal-cyan/5 transition-all group shrink-0"
-      >
+      <TopBarIconButton onClick={onSourcesClick} title="Top sources">
         <span className="w-2 h-2 rounded-full bg-signal-green" />
         <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors hidden sm:inline">
           Sources
         </span>
-      </button>
+      </TopBarIconButton>
+
+      <TopBarIconButton onClick={onFavoritesClick} title="Favorites">
+        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
+          ⭐
+        </span>
+      </TopBarIconButton>
+
+      <TopBarIconButton onClick={onSavedSearchesClick} title="Saved searches">
+        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
+          🔖
+        </span>
+      </TopBarIconButton>
+
+      <TopBarIconButton onClick={onBackupClick} title="Backup data">
+        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
+          💾
+        </span>
+      </TopBarIconButton>
 
       {/* Active query label */}
       {activeQuery && (

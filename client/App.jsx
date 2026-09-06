@@ -4,12 +4,18 @@ import TopBar from "./components/TopBar";
 import NewsSidebar from "./components/NewsSidebar";
 import SourcesModal from "./components/SourcesModal";
 import ApiKeysModal from "./components/ApiKeysModal";
+import FavoritesPanel from "./components/FavoritesPanel";
+import SavedSearchesPanel from "./components/SavedSearchesPanel";
+import DataBackupModal from "./components/DataBackupModal";
 import { useAppControls } from "./hooks/useAppControls";
-import { hasAnyApiKey } from "./utils/storage";
+import { hasAnyApiKey, addSavedSearch } from "./utils/storage";
 
 export default function App() {
   const [showSourcesModal, setShowSourcesModal] = useState(false);
   const [showKeysModal, setShowKeysModal] = useState(() => !hasAnyApiKey());
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [showSavedSearches, setShowSavedSearches] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
 
   const {
     selectedCountry,
@@ -34,9 +40,22 @@ export default function App() {
     handleClose,
     handleLoadMore,
     handleTopSourcesToggle,
+    handleRunSavedSearch,
+    getCurrentSearch,
   } = useAppControls();
 
   const sidebarOpen = loading || articles.length > 0 || !!error || !!meta;
+
+  function handleSaveSearch() {
+    const { topic, extraKeywords, queryOptions } = getCurrentSearch();
+    if (!topic) return;
+    addSavedSearch({
+      label: selectedCountry,
+      topic,
+      extraKeywords,
+      queryOptions,
+    });
+  }
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-carbon-950">
@@ -48,6 +67,19 @@ export default function App() {
       <ApiKeysModal
         isOpen={showKeysModal}
         onClose={() => setShowKeysModal(false)}
+      />
+      <FavoritesPanel
+        isOpen={showFavorites}
+        onClose={() => setShowFavorites(false)}
+      />
+      <SavedSearchesPanel
+        isOpen={showSavedSearches}
+        onClose={() => setShowSavedSearches(false)}
+        onRun={handleRunSavedSearch}
+      />
+      <DataBackupModal
+        isOpen={showBackup}
+        onClose={() => setShowBackup(false)}
       />
 
       {/* Map layer — shrinks when sidebar opens */}
@@ -73,6 +105,9 @@ export default function App() {
         activeQuery={activeQuery}
         onSourcesClick={() => setShowSourcesModal(true)}
         onKeysClick={() => setShowKeysModal(true)}
+        onFavoritesClick={() => setShowFavorites(true)}
+        onSavedSearchesClick={() => setShowSavedSearches(true)}
+        onBackupClick={() => setShowBackup(true)}
         isMobile={isMobile}
       />
 
@@ -97,6 +132,7 @@ export default function App() {
           timeRange={timeRange}
           useTopSourcesOnly={useTopSourcesOnly}
           onTopSourcesToggle={handleTopSourcesToggle}
+          onSaveSearch={handleSaveSearch}
           isMobile={isMobile}
         />
       )}

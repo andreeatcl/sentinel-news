@@ -1,4 +1,5 @@
 import { timeAgo } from "../utils/newsApi";
+import FavoriteButton from "./FavoriteButton";
 
 export function SkeletonCard() {
   return (
@@ -34,9 +35,12 @@ export default function ArticleCard({ article, index }) {
         <span className="text-[10px] font-mono font-bold text-signal-cyan uppercase tracking-wider truncate max-w-[60%]">
           {article.source?.name || domain}
         </span>
-        <span className="text-[10px] font-mono text-carbon-500">
-          {timeAgo(article.publishedAt)}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[10px] font-mono text-carbon-500">
+            {timeAgo(article.publishedAt)}
+          </span>
+          <FavoriteButton article={article} />
+        </div>
       </div>
 
       {/* Title */}

@@ -137,6 +137,20 @@ export function useAppControls() {
     applyTopSourcesFilter(newState);
   }, [useTopSourcesOnly, applyTopSourcesFilter]);
 
+  // re-run a search saved earlier (see SavedSearchesPanel.jsx)
+  const handleRunSavedSearch = useCallback(
+    ({ topic, extraKeywords, queryOptions }) => {
+      setSelectedCountry(topic);
+      runSearch({ topic, extraKeywords, queryOptions });
+    },
+    [runSearch],
+  );
+
+  const getCurrentSearch = useCallback(
+    () => ({ ...searchContextRef.current }),
+    [],
+  );
+
   return {
     selectedCountry,
     sortBy,
@@ -160,5 +174,7 @@ export function useAppControls() {
     handleClose,
     handleLoadMore,
     handleTopSourcesToggle,
+    handleRunSavedSearch,
+    getCurrentSearch,
   };
 }
