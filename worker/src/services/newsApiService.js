@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 const NEWS_API_BASE = "https://newsapi.org/v2";
 
 export async function fetchEverything({

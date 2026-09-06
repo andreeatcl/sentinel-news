@@ -1,6 +1,7 @@
 node_modules/
 .env
-server/.env
 client/dist/
 .DS_Store
-client/utils/countryKeywords.json
+worker/.wrangler/
+worker/.dev.vars
+temporary/

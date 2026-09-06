@@ -1,119 +1,38 @@
-import countryKeywords from "./countryKeywords.json";
+import { getApiKeys, setApiKeys } from "./storage";
 
 const BASE = "/api";
 const REQUEST_TIMEOUT_MS = 15000;
 
-function normalizeCountryKey(value = "") {
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ");
+const TIME_RANGE_HOURS = { "48h": 48, "30d": 30 * 24 };
+
+function buildTimeRangeFilter(timeRange) {
+  const hours = TIME_RANGE_HOURS[timeRange] ?? 7 * 24;
+  return new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 }
 
-function resolveCountryKey(countryOrTopic = "") {
-  const normalizedCountry = normalizeCountryKey(countryOrTopic);
-  const aliases = countryKeywords.aliases || {};
-  const resolvedKey = aliases[normalizedCountry] || normalizedCountry;
-  return { normalizedCountry, resolvedKey };
+function buildAuthHeaders({ primary, backup, lastGood }) {
+  const headers = { "X-Newsapi-Last-Good": lastGood };
+  if (primary) headers["X-Newsapi-Key"] = primary;
+  if (backup) headers["X-Newsapi-Key-Backup"] = backup;
+  return headers;
 }
 
-function quoteKeyword(term) {
-  const clean = term.trim();
-  if (!clean) return "";
-  if (
-    clean.includes(" OR ") ||
-    clean.includes(" AND ") ||
-    clean.includes(" NOT ")
-  ) {
-    return clean;
-  }
-  if (clean.includes(" ") && !(clean.startsWith('"') && clean.endsWith('"'))) {
-    return `"${clean}"`;
-  }
-  return clean;
-}
-
-function buildKeywordExpression(keywords) {
-  const unique = [];
-  const seen = new Set();
-  for (const keyword of keywords || []) {
-    const normalized = normalizeCountryKey(keyword);
-    if (!normalized || seen.has(normalized)) continue;
-    seen.add(normalized);
-    unique.push(quoteKeyword(keyword));
-  }
-  return unique.join(" OR ");
-}
-
-function toDisplayVariant(normalizedValue) {
-  const normalized = normalizeCountryKey(normalizedValue);
-  if (!normalized) return "";
-
-  const tokens = normalized.split(" ").filter(Boolean);
-  const isSpacedAcronym =
-    tokens.length > 1 && tokens.every((token) => token.length === 1);
-  if (isSpacedAcronym) {
-    return tokens.join("").toUpperCase();
-  }
-
-  if (tokens.length === 1 && tokens[0].length <= 3) {
-    return tokens[0].toUpperCase();
-  }
-
-  return tokens
-    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
-    .join(" ");
-}
-
-function buildCountryExpression(
-  countryOrTopic,
-  normalizedCountry,
-  resolvedKey,
-) {
-  const aliases = countryKeywords.aliases || {};
-  const seen = new Set();
-  const variants = [];
-
-  const addVariant = (value) => {
-    const normalized = normalizeCountryKey(value);
-    if (!normalized || seen.has(normalized)) return;
-    seen.add(normalized);
-    variants.push(toDisplayVariant(value));
-  };
-
-  addVariant(countryOrTopic);
-  addVariant(resolvedKey);
-  addVariant(normalizedCountry);
-
-  for (const [aliasKey, targetKey] of Object.entries(aliases)) {
-    if (targetKey === resolvedKey) {
-      addVariant(aliasKey);
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error("Request timed out. Please try again.");
     }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const cleanVariants = variants
-    .filter(Boolean)
-    .map((variant) => quoteKeyword(variant));
-  if (cleanVariants.length <= 1) {
-    return quoteKeyword(countryOrTopic);
-  }
-
-  return `(${cleanVariants.join(" OR ")})`;
 }
 
-/**
- * Fetch news articles via the Express proxy.
- * @param {Object} opts
- * @param {string} opts.q - Search query
- * @param {"relevancy"|"popularity"|"publishedAt"} [opts.sortBy]
- * @param {"48h"|"7d"|"30d"} [opts.timeRange]
- * @param {string} [opts.language]
- * @param {number} [opts.pageSize]
- * @param {number} [opts.page]
- * @param {string} [opts.searchIn]
- */
+// fetch /api/news, add params and headers
 export async function fetchNews({
   q,
   sortBy = "relevancy",
@@ -123,48 +42,36 @@ export async function fetchNews({
   page = 1,
   searchIn = "title,description",
 }) {
-  const params = new URLSearchParams({
-    q,
-    sortBy,
-    pageSize,
-    page,
-    searchIn,
-  });
-
+  const params = new URLSearchParams({ q, sortBy, pageSize, page, searchIn });
   if (language) {
     params.set("language", language);
   }
+  params.set("from", buildTimeRangeFilter(timeRange));
 
-  if (timeRange === "48h") {
-    const from = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
-    params.set("from", from);
-  } else if (timeRange === "30d") {
-    const from = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    params.set("from", from);
-  } else {
-    const from = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    params.set("from", from);
+  const { primary, backup, lastGood } = getApiKeys();
+  if (!primary && !backup) {
+    throw new Error(
+      "No API key configured. Add one via the key icon in the top bar.",
+    );
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  let res;
-  try {
-    res = await fetch(`${BASE}/news?${params}`, { signal: controller.signal });
-  } catch (err) {
-    if (err?.name === "AbortError") {
-      throw new Error("Request timed out. Please try again.");
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  const res = await fetchWithTimeout(
+    `${BASE}/news?${params}`,
+    { headers: buildAuthHeaders({ primary, backup, lastGood }) },
+    REQUEST_TIMEOUT_MS,
+  );
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `HTTP ${res.status}`);
   }
-  return res.json();
+
+  // remember the API key that last returned a result
+  const data = await res.json();
+  if (data._keyUsed && data._keyUsed !== lastGood) {
+    setApiKeys({ primary, backup, lastGood: data._keyUsed });
+  }
+  return data;
 }
 
 export async function fetchHealth() {
@@ -172,95 +79,19 @@ export async function fetchHealth() {
   return res.json();
 }
 
-/**
- * Build query string with optional political keyword modifier.
- * @param {string} countryOrTopic - Base search term
- * @param {string} [extraKeywords] - Additional user-provided keywords
- * @param {boolean} [includePoliticalKeywords] - Include built-in political/war terms
- */
-export function buildTopicQuery(
-  countryOrTopic,
-  extraKeywords = "",
-  includePoliticalKeywords = true,
-  options = {},
-) {
-  const { includeCountry = true, overrideCountryKeywords = false } = options;
-  const { normalizedCountry, resolvedKey } = resolveCountryKey(countryOrTopic);
-  const defaultKeywords = Array.isArray(countryKeywords.default)
-    ? countryKeywords.default
-    : [];
-  const countryExpression = buildCountryExpression(
-    countryOrTopic,
-    normalizedCountry,
-    resolvedKey,
-  );
-
-  const countrySpecific = Array.isArray(countryKeywords[normalizedCountry])
-    ? countryKeywords[normalizedCountry]
-    : Array.isArray(countryKeywords[resolvedKey])
-      ? countryKeywords[resolvedKey]
-      : [];
-  const activeKeywords =
-    countrySpecific.length > 0 ? countrySpecific : defaultKeywords;
-  const keywordExpr = buildKeywordExpression(activeKeywords);
-
-  const scopedExtra = extraKeywords.trim()
-    ? extraKeywords.includes("OR") ||
-      extraKeywords.includes("AND") ||
-      extraKeywords.includes("NOT")
-      ? extraKeywords.trim()
-      : extraKeywords
-          .split(",")
-          .map((item) => quoteKeyword(item))
-          .filter(Boolean)
-          .join(" OR ")
-    : "";
-
-  const parts = [];
-
-  if (includeCountry) {
-    parts.push(countryExpression);
+// check for valid key in the settings screen
+export async function testApiKey(key) {
+  if (!key) return { valid: false, message: "Enter a key first." };
+  try {
+    const res = await fetch(`${BASE}/keys/test`, {
+      headers: { "X-Newsapi-Key": key },
+    });
+    return res.json();
+  } catch {
+    return { valid: false, message: "Could not reach the server." };
   }
-
-  if (includePoliticalKeywords && !overrideCountryKeywords && keywordExpr) {
-    parts.push(`(${keywordExpr})`);
-  }
-
-  if (scopedExtra) {
-    parts.push(`(${scopedExtra})`);
-  }
-
-  if (parts.length > 0) {
-    return parts.join(" AND ");
-  }
-
-  return countryExpression;
 }
 
-export function getCountryKeywordOptions(countryOrTopic) {
-  const { normalizedCountry, resolvedKey } = resolveCountryKey(countryOrTopic);
-
-  const countrySpecific = Array.isArray(countryKeywords[normalizedCountry])
-    ? countryKeywords[normalizedCountry]
-    : Array.isArray(countryKeywords[resolvedKey])
-      ? countryKeywords[resolvedKey]
-      : [];
-
-  const unique = [];
-  const seen = new Set();
-  for (const keyword of countrySpecific) {
-    const normalized = normalizeCountryKey(keyword);
-    if (!normalized || seen.has(normalized)) continue;
-    seen.add(normalized);
-    unique.push(keyword);
-  }
-
-  return unique;
-}
-
-/**
- * Format a UTC date string as relative time.
- */
 export function timeAgo(dateStr) {
   if (!dateStr) return "";
   const diff = Date.now() - new Date(dateStr).getTime();

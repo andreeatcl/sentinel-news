@@ -1,24 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-
-function quoteKeyword(term) {
-  const clean = term.trim();
-  if (!clean) return "";
-
-  if (
-    clean.includes(" OR ") ||
-    clean.includes(" AND ") ||
-    clean.includes(" NOT ")
-  ) {
-    return clean;
-  }
-
-  if (clean.includes(" ") && !(clean.startsWith('"') && clean.endsWith('"'))) {
-    return `"${clean}"`;
-  }
-
-  return clean;
-}
+import { quoteKeyword } from "../utils/queryBuilder";
+import KeywordGrid from "./KeywordGrid";
+import KeywordOperatorControls from "./KeywordOperatorControls";
+import CustomTermInput from "./CustomTermInput";
 
 export default function KeywordQueryModal({
   isOpen,
@@ -61,6 +46,7 @@ export default function KeywordQueryModal({
 
   function addCustomTerm() {
     const next = customInput.trim();
+    // SINGLE words only
     if (!next || /\s/.test(next)) {
       return;
     }
@@ -91,6 +77,7 @@ export default function KeywordQueryModal({
     setSelectedKeywords([]);
   }
 
+  // merging independent keyword groups using OR/AND operators
   function handleApply() {
     const selectedExpr = selectedKeywords
       .map((keyword) => quoteKeyword(keyword))
@@ -148,162 +135,35 @@ export default function KeywordQueryModal({
           </button>
         </div>
 
-        <div className="px-5 py-3 border-b border-carbon-700/50 shrink-0 flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setIncludeCountryInQuery((current) => !current)}
-            className={`text-[10px] font-mono font-bold rounded border px-2 py-1 transition-colors ${
-              includeCountryInQuery
-                ? "text-signal-green border-signal-green/50 bg-signal-green/10"
-                : "text-carbon-400 border-carbon-600/70 hover:border-carbon-500"
-            }`}
-          >
-            COUNTRY {includeCountryInQuery ? "ON" : "OFF"}
-          </button>
-
-          <span className="text-[10px] font-mono text-carbon-500 uppercase tracking-wider">
-            Selected keywords:
-          </span>
-          <select
-            value={selectedOperator}
-            onChange={(e) => setSelectedOperator(e.target.value)}
-            className="bg-carbon-800 border border-carbon-600/60 rounded text-[10px] font-mono text-white px-2 py-1 outline-none focus:border-signal-cyan/50"
-          >
-            <option value="OR">OR</option>
-            <option value="AND">AND</option>
-          </select>
-
-          <span className="text-[10px] font-mono text-carbon-500 uppercase tracking-wider">
-            custom terms:
-          </span>
-          <select
-            value={customOperator}
-            onChange={(e) => setCustomOperator(e.target.value)}
-            className="bg-carbon-800 border border-carbon-600/60 rounded text-[10px] font-mono text-white px-2 py-1 outline-none focus:border-signal-cyan/50"
-          >
-            <option value="OR">OR</option>
-            <option value="AND">AND</option>
-          </select>
-
-          <span className="text-[10px] font-mono text-carbon-500 uppercase tracking-wider">
-            between groups:
-          </span>
-          <select
-            value={combineOperator}
-            onChange={(e) => setCombineOperator(e.target.value)}
-            className="bg-carbon-800 border border-carbon-600/60 rounded text-[10px] font-mono text-white px-2 py-1 outline-none focus:border-signal-cyan/50"
-          >
-            <option value="OR">OR</option>
-            <option value="AND">AND</option>
-          </select>
-        </div>
+        <KeywordOperatorControls
+          includeCountryInQuery={includeCountryInQuery}
+          onToggleIncludeCountry={() =>
+            setIncludeCountryInQuery((current) => !current)
+          }
+          selectedOperator={selectedOperator}
+          onSelectedOperatorChange={setSelectedOperator}
+          customOperator={customOperator}
+          onCustomOperatorChange={setCustomOperator}
+          combineOperator={combineOperator}
+          onCombineOperatorChange={setCombineOperator}
+        />
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
-          <div>
-            <div className="flex items-center justify-between mb-2 gap-2">
-              <p className="text-[10px] font-mono text-carbon-500 uppercase tracking-widest">
-                Country keyword options
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={selectAllKeywords}
-                  className="text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-2 py-1 hover:border-carbon-500 transition-colors"
-                >
-                  SELECT ALL
-                </button>
-                <button
-                  type="button"
-                  onClick={deselectAllKeywords}
-                  className="text-[10px] font-mono font-bold text-carbon-400 border border-carbon-600/70 rounded px-2 py-1 hover:border-carbon-500 transition-colors"
-                >
-                  DESELECT ALL
-                </button>
-              </div>
-            </div>
+          <KeywordGrid
+            keywords={sortedKeywords}
+            selectedKeywords={selectedKeywords}
+            onToggleKeyword={toggleKeyword}
+            onSelectAll={selectAllKeywords}
+            onDeselectAll={deselectAllKeywords}
+          />
 
-            {sortedKeywords.length === 0 ? (
-              <div className="text-[11px] font-mono text-carbon-600 border border-carbon-700/60 rounded px-3 py-2">
-                No predefined keywords available for this country.
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {sortedKeywords.map((keyword) => {
-                  const active = selectedKeywords.includes(keyword);
-                  return (
-                    <label
-                      key={keyword}
-                      className={`flex items-center gap-2 px-2.5 py-2 border rounded cursor-pointer transition-colors ${
-                        active
-                          ? "border-signal-cyan/60 bg-signal-cyan/10"
-                          : "border-carbon-700/70 bg-carbon-800/40 hover:border-carbon-600"
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={active}
-                        onChange={() => toggleKeyword(keyword)}
-                        className="accent-signal-cyan"
-                      />
-                      <span
-                        className={`text-[11px] font-mono leading-tight ${
-                          active ? "text-signal-cyan" : "text-carbon-300"
-                        }`}
-                      >
-                        {keyword}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <p className="text-[10px] font-mono text-carbon-500 mb-2 uppercase tracking-widest">
-              Add custom keyword
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addCustomTerm();
-                  }
-                }}
-                placeholder="one word only"
-                className="flex-1 bg-carbon-800 border border-carbon-600/60 rounded text-[11px] font-mono text-white px-3 py-2 outline-none placeholder:text-carbon-600 focus:border-signal-cyan/50"
-              />
-              <button
-                type="button"
-                onClick={addCustomTerm}
-                className="text-[10px] font-mono font-bold text-signal-cyan border border-signal-cyan/40 rounded px-3 py-2 hover:bg-signal-cyan/10 transition-colors"
-              >
-                ADD
-              </button>
-            </div>
-            <p className="text-[10px] font-mono text-carbon-600 mt-2">
-              Press Enter or Add to append the word to this query only.
-            </p>
-
-            {customTerms.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {customTerms.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => removeCustomTerm(term)}
-                    className="text-[10px] font-mono border border-signal-amber/40 text-signal-amber bg-signal-amber/10 rounded px-2 py-1 hover:bg-signal-amber/20 transition-colors"
-                  >
-                    {term} ×
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <CustomTermInput
+            customInput={customInput}
+            onCustomInputChange={setCustomInput}
+            onAddTerm={addCustomTerm}
+            customTerms={customTerms}
+            onRemoveTerm={removeCustomTerm}
+          />
         </div>
 
         <div className="border-t border-carbon-700/50 px-5 py-3 shrink-0 flex items-center justify-end gap-2">

@@ -6,6 +6,7 @@ export default function TopBar({
   meta,
   activeQuery,
   onSourcesClick,
+  onKeysClick,
   isMobile = false,
 }) {
   const [input, setInput] = useState("");
@@ -17,11 +18,8 @@ export default function TopBar({
     }
   }
 
-  const apiCalls = meta?.apiCallsToday ?? "—";
   const remaining =
-    typeof meta?.apiCallsToday === "number"
-      ? Math.max(0, 100 - meta.apiCallsToday)
-      : "—";
+    typeof meta?.apiCallsRemaining === "number" ? meta.apiCallsRemaining : "—";
 
   return (
     <div
@@ -86,7 +84,23 @@ export default function TopBar({
             CACHED
           </span>
         )}
+        {meta?.keyUsed === "backup" && (
+          <span className="text-[9px] font-mono text-signal-amber border border-signal-amber/30 rounded px-1 py-0.5 leading-none">
+            BACKUP KEY
+          </span>
+        )}
       </div>
+
+      {/* API keys button */}
+      <button
+        onClick={onKeysClick}
+        className="pointer-events-auto flex items-center gap-2 bg-carbon-900/95 border border-carbon-600/60 rounded px-2.5 py-2 backdrop-blur-sm hover:border-signal-cyan/60 hover:bg-signal-cyan/5 transition-all group shrink-0"
+        title="API keys"
+      >
+        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
+          🔑
+        </span>
+      </button>
 
       {/* Top Sources button */}
       <button

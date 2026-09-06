@@ -1,45 +1,23 @@
-import { useState, useCallback, useRef } from "react";
-import { useEffect } from "react";
+import { useState } from "react";
 import WorldMap from "./components/WorldMap";
 import TopBar from "./components/TopBar";
 import NewsSidebar from "./components/NewsSidebar";
 import SourcesModal from "./components/SourcesModal";
-import { useNews } from "./hooks/useNews";
-
-const MOBILE_BREAKPOINT = 768;
+import ApiKeysModal from "./components/ApiKeysModal";
+import { useAppControls } from "./hooks/useAppControls";
+import { hasAnyApiKey } from "./utils/storage";
 
 export default function App() {
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [sortBy, setSortBy] = useState("relevancy");
-  const [timeRange, setTimeRange] = useState("7d");
-  const [includePoliticalKeywords, setIncludePoliticalKeywords] =
-    useState(true);
   const [showSourcesModal, setShowSourcesModal] = useState(false);
-  const [useTopSourcesOnly, setUseTopSourcesOnly] = useState(false);
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined"
-      ? window.innerWidth < MOBILE_BREAKPOINT
-      : false,
-  );
-
-  useEffect(() => {
-    function handleResize() {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    }
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Track current search context for re-filtering
-  const searchContextRef = useRef({
-    topic: null,
-    extraKeywords: "",
-    queryOptions: {},
-    raw: false,
-  });
+  const [showKeysModal, setShowKeysModal] = useState(() => !hasAnyApiKey());
 
   const {
+    selectedCountry,
+    sortBy,
+    timeRange,
+    includePoliticalKeywords,
+    useTopSourcesOnly,
+    isMobile,
     articles,
     loading,
     loadingMore,
@@ -47,131 +25,16 @@ export default function App() {
     error,
     meta,
     activeQuery,
-    search,
-    resort,
-    loadMore,
-    setTopSourcesOnly: applyTopSourcesFilter,
-    clear,
-  } = useNews();
-
-  const handleCountryClick = useCallback(
-    (countryName) => {
-      setSelectedCountry(countryName);
-      searchContextRef.current = {
-        topic: countryName,
-        extraKeywords: "",
-        queryOptions: {},
-        raw: false,
-      };
-      search({
-        topic: countryName,
-        sortBy,
-        timeRange,
-        raw: false,
-        includePoliticalKeywords,
-        useTopSourcesOnly,
-        page: 1,
-        append: false,
-      });
-    },
-    [search, sortBy, timeRange, includePoliticalKeywords, useTopSourcesOnly],
-  );
-
-  const handleGlobalSearch = useCallback(
-    ({ topic, raw }) => {
-      setSelectedCountry(null);
-      searchContextRef.current = {
-        topic,
-        extraKeywords: "",
-        queryOptions: {},
-        raw: raw ?? true,
-      };
-      search({
-        topic,
-        sortBy,
-        timeRange,
-        raw: raw ?? true,
-        includePoliticalKeywords: true,
-        useTopSourcesOnly,
-        page: 1,
-        append: false,
-      });
-    },
-    [search, sortBy, timeRange, useTopSourcesOnly],
-  );
-
-  const handleSortChange = useCallback(
-    (newSort) => {
-      setSortBy(newSort);
-      resort(newSort, timeRange);
-    },
-    [resort, timeRange],
-  );
-
-  const handleTimeRangeChange = useCallback(
-    (newRange) => {
-      setTimeRange(newRange);
-      resort(sortBy, newRange);
-    },
-    [resort, sortBy],
-  );
-
-  const handleExtraSearch = useCallback(
-    ({ topic, extraKeywords, queryOptions = {} }) => {
-      searchContextRef.current = {
-        topic,
-        extraKeywords,
-        queryOptions,
-        raw: false,
-      };
-      search({
-        topic,
-        extraKeywords,
-        queryOptions,
-        sortBy,
-        timeRange,
-        raw: false,
-        includePoliticalKeywords,
-        useTopSourcesOnly,
-        page: 1,
-        append: false,
-      });
-    },
-    [search, sortBy, timeRange, includePoliticalKeywords, useTopSourcesOnly],
-  );
-
-  const handlePoliticalModeChange = useCallback(
-    (enabled) => {
-      setIncludePoliticalKeywords(enabled);
-      if (!selectedCountry) return;
-      search({
-        topic: selectedCountry,
-        sortBy,
-        timeRange,
-        raw: false,
-        includePoliticalKeywords: enabled,
-        useTopSourcesOnly,
-        page: 1,
-        append: false,
-      });
-    },
-    [search, selectedCountry, sortBy, timeRange, useTopSourcesOnly],
-  );
-
-  const handleClose = useCallback(() => {
-    setSelectedCountry(null);
-    clear();
-  }, [clear]);
-
-  const handleLoadMore = useCallback(() => {
-    loadMore(sortBy, timeRange);
-  }, [loadMore, sortBy, timeRange]);
-
-  const handleTopSourcesToggle = useCallback(() => {
-    const newState = !useTopSourcesOnly;
-    setUseTopSourcesOnly(newState);
-    applyTopSourcesFilter(newState);
-  }, [useTopSourcesOnly, applyTopSourcesFilter]);
+    handleCountryClick,
+    handleGlobalSearch,
+    handleSortChange,
+    handleTimeRangeChange,
+    handleExtraSearch,
+    handlePoliticalModeChange,
+    handleClose,
+    handleLoadMore,
+    handleTopSourcesToggle,
+  } = useAppControls();
 
   const sidebarOpen = loading || articles.length > 0 || !!error || !!meta;
 
@@ -181,6 +44,10 @@ export default function App() {
       <SourcesModal
         isOpen={showSourcesModal}
         onClose={() => setShowSourcesModal(false)}
+      />
+      <ApiKeysModal
+        isOpen={showKeysModal}
+        onClose={() => setShowKeysModal(false)}
       />
 
       {/* Map layer — shrinks when sidebar opens */}
@@ -205,6 +72,7 @@ export default function App() {
         meta={meta}
         activeQuery={activeQuery}
         onSourcesClick={() => setShowSourcesModal(true)}
+        onKeysClick={() => setShowKeysModal(true)}
         isMobile={isMobile}
       />
 

@@ -1,18 +1,19 @@
 import { useState, useMemo } from "react";
 import sources from "../utils/sources.json";
 
-const CATEGORY_COLORS = {
-  general: "signal-cyan",
-  business: "signal-amber",
-  technology: "signal-green",
-  sports: "signal-red",
-  entertainment: "signal-amber",
-  health: "signal-green",
-  science: "signal-cyan",
+// tailwind color stuff
+const CATEGORY_BADGE_CLASSES = {
+  general: "text-signal-cyan border-signal-cyan/40 bg-signal-cyan/10",
+  business: "text-signal-amber border-signal-amber/40 bg-signal-amber/10",
+  technology: "text-signal-green border-signal-green/40 bg-signal-green/10",
+  sports: "text-signal-red border-signal-red/40 bg-signal-red/10",
+  entertainment: "text-signal-amber border-signal-amber/40 bg-signal-amber/10",
+  health: "text-signal-green border-signal-green/40 bg-signal-green/10",
+  science: "text-signal-cyan border-signal-cyan/40 bg-signal-cyan/10",
 };
 
-function getCategoryColor(category) {
-  return CATEGORY_COLORS[category] || "signal-cyan";
+function getCategoryBadgeClasses(category) {
+  return CATEGORY_BADGE_CLASSES[category] || CATEGORY_BADGE_CLASSES.general;
 }
 
 export default function SourcesModal({ isOpen, onClose }) {
@@ -79,7 +80,7 @@ export default function SourcesModal({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto px-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredSources.map((source) => {
-              const color = getCategoryColor(source.category);
+              const badgeClasses = getCategoryBadgeClasses(source.category);
               return (
                 <div
                   key={source.id}
@@ -91,7 +92,7 @@ export default function SourcesModal({ isOpen, onClose }) {
                       {source.name}
                     </h3>
                     <span
-                      className={`text-[8px] font-mono font-bold rounded px-1.5 py-0.5 text-${color} border border-${color}/40 bg-${color}/10 uppercase tracking-wider whitespace-nowrap`}
+                      className={`text-[8px] font-mono font-bold rounded px-1.5 py-0.5 border ${badgeClasses} uppercase tracking-wider whitespace-nowrap`}
                     >
                       {source.category}
                     </span>

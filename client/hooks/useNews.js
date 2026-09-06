@@ -1,23 +1,10 @@
 import { useState, useCallback, useRef } from "react";
-import { fetchNews, buildTopicQuery } from "../utils/newsApi";
-import sources from "../utils/sources.json";
-
-function normalizeSourceValue(value = "") {
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-const topSourceNameSet = new Set(
-  sources.sources.map((source) => normalizeSourceValue(source.name)),
-);
-const topSourceIdSet = new Set(
-  sources.sources
-    .map((source) => normalizeSourceValue(source.id))
-    .filter(Boolean),
-);
+import { fetchNews } from "../utils/newsApi";
+import { buildTopicQuery } from "../utils/queryBuilder";
+import {
+  sanitizeArticles,
+  filterTopSources as filterToTopSources,
+} from "../utils/articleFilters";
 
 export function useNews() {
   const [allArticles, setAllArticles] = useState([]);
@@ -38,35 +25,10 @@ export function useNews() {
   const useTopSourcesOnlyRef = useRef(false);
   const pageRef = useRef(1);
 
-  function sanitizeArticles(inputArticles) {
-    const seen = new Set();
-    return (inputArticles || []).filter((article) => {
-      const title = article?.title || "";
-      const description = article?.description || "";
-      const url = article?.url || "";
-
-      if (!url) return false;
-      if (seen.has(url)) return false;
-      seen.add(url);
-
-      const badTitle = title.trim() === "[Removed]" || title.trim() === "";
-      const badDescription = description.trim() === "[Removed]";
-      if (badTitle || badDescription) return false;
-
-      return true;
-    });
-  }
-
+  // avoid double api call when applying top sources filter
   function filterTopSources(inputArticles) {
     if (!useTopSourcesOnlyRef.current) return inputArticles;
-    return (inputArticles || []).filter((article) => {
-      const sourceId = normalizeSourceValue(article?.source?.id || "");
-      const sourceName = normalizeSourceValue(article?.source?.name || "");
-      return (
-        (sourceId && topSourceIdSet.has(sourceId)) ||
-        (sourceName && topSourceNameSet.has(sourceName))
-      );
-    });
+    return filterToTopSources(inputArticles);
   }
 
   const search = useCallback(
@@ -121,6 +83,8 @@ export function useNews() {
           cached: data._cached,
           cacheAge: data._cacheAge,
           apiCallsToday: data._apiCallsToday,
+          apiCallsRemaining: data._apiCallsRemaining,
+          keyUsed: data._keyUsed,
           page,
           pageSize: 100,
         });

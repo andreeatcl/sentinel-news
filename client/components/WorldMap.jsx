@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION = "&copy; OpenStreetMap contributors";
 
+// local copy with github dataset as fallback
 const GEOJSON_SOURCES = [
   "/data/countries.geojson",
   "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson",
@@ -27,6 +28,7 @@ async function fetchJsonWithTimeout(url, timeoutMs) {
   }
 }
 
+// check for country name mismatch
 function getCountryName(feature) {
   const properties = feature?.properties ?? {};
   const candidates = [
@@ -50,7 +52,7 @@ function getCountryName(feature) {
   return resolved?.trim() ?? "Unknown";
 }
 
-// Styles for GeoJSON countries
+// country border styling
 function countryStyle(feature, selectedCountry) {
   const countryName = getCountryName(feature);
   const isSelected = selectedCountry && countryName === selectedCountry;
