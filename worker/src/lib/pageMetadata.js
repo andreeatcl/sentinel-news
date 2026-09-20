@@ -6,7 +6,7 @@ const FETCH_TIMEOUT_MS = 6000;
 const SUCCESS_TTL_SECONDS = 60 * 60 * 24 * 30; // articles don't change; cache long
 const FAILURE_TTL_SECONDS = 60 * 60 * 6; // retry failures sooner (transient blocks)
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 
 const NAMED_ENTITIES = {
   amp: "&",
@@ -40,10 +40,11 @@ async function hashUrl(url) {
     .slice(0, 24);
 }
 
-function extractFrom(response) {
+function extractFrom(response, pageUrl) {
   let title = "";
   let ogTitle = "";
   let description = "";
+  let ogImage = "";
 
   const rewriter = new HTMLRewriter()
     .on("title", {
@@ -60,17 +61,35 @@ function extractFrom(response) {
       element(el) {
         description = description || el.getAttribute("content") || "";
       },
+    })
+    .on('meta[property="og:image"]', {
+      element(el) {
+        ogImage = ogImage || el.getAttribute("content") || "";
+      },
     });
 
-  const MAX_LEN = 200;
-  const clean = (s) => decodeEntities(s.trim()).slice(0, MAX_LEN);
+  const TITLE_MAX_LEN = 200;
+  const DESCRIPTION_MAX_LEN = 500;
+  const clean = (s, maxLen) => decodeEntities(s.trim()).slice(0, maxLen);
 
   return {
     stream: rewriter.transform(response),
-    getResult: () => ({
-      title: clean(ogTitle) || clean(title),
-      description: clean(description),
-    }),
+    getResult: () => {
+      let image = null;
+      const rawImage = decodeEntities(ogImage.trim());
+      if (rawImage) {
+        try {
+          image = new URL(rawImage, pageUrl).toString();
+        } catch {
+          image = null;
+        }
+      }
+      return {
+        title: clean(ogTitle, TITLE_MAX_LEN) || clean(title, TITLE_MAX_LEN),
+        description: clean(description, DESCRIPTION_MAX_LEN),
+        image,
+      };
+    },
   };
 }
 
@@ -84,12 +103,12 @@ async function fetchPageMetadataUncached(url) {
     });
     if (!response.ok) return null;
 
-    const { stream, getResult } = extractFrom(response);
+    const { stream, getResult } = extractFrom(response, url);
     await stream.text();
 
-    const { title, description } = getResult();
+    const { title, description, image } = getResult();
     if (!title) return null;
-    return { title, description: description || null };
+    return { title, description: description || null, image };
   } catch {
     return null;
   } finally {

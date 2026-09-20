@@ -46,7 +46,19 @@ export async function withKeyFailover(env, keys, fetchFn) {
       continue;
     }
 
-    const { response, data } = await fetchFn(key);
+    let response, data;
+    try {
+      ({ response, data } = await fetchFn(key));
+    } catch (err) {
+      lastError = {
+        status: 504,
+        message:
+          err?.name === "AbortError"
+            ? `Your ${slot} key's request to NewsAPI timed out.`
+            : `Could not reach NewsAPI using your ${slot} key.`,
+      };
+      continue;
+    }
 
     if (response.ok && data.status !== "error") {
       const count = await trackUsage(env, keyHash);

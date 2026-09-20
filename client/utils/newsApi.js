@@ -1,7 +1,7 @@
 import { getApiKeys, setApiKeys } from "./storage";
 
 const BASE = "/api";
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 25000;
 
 const TIME_RANGE_HOURS = { "48h": 48, "30d": 30 * 24 };
 

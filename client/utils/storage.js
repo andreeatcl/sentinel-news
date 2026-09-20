@@ -60,6 +60,7 @@ export function addFavorite(article) {
     url: article.url,
     title: article.title || "",
     sourceName: article.source?.name || "",
+    type: article.type === "event" ? "event" : "article",
     savedAt: new Date().toISOString(),
   };
   write(STORAGE_KEYS.favorites, [favorite, ...current]);

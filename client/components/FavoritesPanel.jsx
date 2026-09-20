@@ -66,8 +66,13 @@ export default function FavoritesPanel({ isOpen, onClose }) {
                   rel="noopener noreferrer"
                   className="min-w-0 flex-1 hover:text-signal-cyan transition-colors"
                 >
-                  <p className="text-[10px] font-mono text-carbon-500 uppercase tracking-wider truncate">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono text-carbon-500 uppercase tracking-wider truncate">
                     {item.sourceName}
+                    {item.type === "event" && (
+                      <span className="text-[8px] font-mono font-bold text-signal-amber border border-signal-amber/40 bg-signal-amber/10 rounded px-1 py-0.5 uppercase tracking-wider shrink-0">
+                        Event
+                      </span>
+                    )}
                   </p>
                   <p className="text-sm font-body text-white leading-snug line-clamp-2">
                     {item.title}

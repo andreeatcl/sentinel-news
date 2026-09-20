@@ -1,10 +1,12 @@
 import { SkeletonCard } from "./ArticleCard";
+import FavoriteButton from "./FavoriteButton";
 import { toneCategory } from "../utils/eventTone";
-
-function formatDay(day = "") {
-  if (day.length !== 8) return day;
-  return `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
-}
+import {
+  validActorLabel,
+  fallbackHeadline,
+  eventTimeLabel,
+  getDomain,
+} from "../utils/eventDisplay";
 
 function EventRow({ event, onClick }) {
   const tone = toneCategory(event.goldstein);
@@ -15,50 +17,77 @@ function EventRow({ event, onClick }) {
         ? "bg-signal-red"
         : "bg-signal-amber";
 
-  // GDELT's structured data has no headline at all — this is fetched
-  // server-side from the source article's own page title. When that fetch
-  // failed (blocked site, timeout), fall back to the CAMEO category, which
-  // is at least something rather than nothing.
-  const headline = event.headline || event.eventTypeLabel;
+  const headline = event.headline || fallbackHeadline(event);
+  const domain = getDomain(event.sourceUrl);
+
+  const actor1Label = validActorLabel(event.actor1);
+  const actor2Label = validActorLabel(event.actor2);
+  const actorsLine =
+    actor1Label && actor2Label
+      ? `${actor1Label} → ${actor2Label}`
+      : actor1Label || actor2Label || null;
+
+  const favoriteTarget = event.sourceUrl
+    ? {
+        url: event.sourceUrl,
+        title: headline,
+        source: { name: domain },
+        type: "event",
+      }
+    : null;
 
   return (
-    <button
-      onClick={onClick}
-      className="w-full text-left p-4 border-b border-carbon-700/50 hover:bg-carbon-700/40 transition-colors group"
-    >
-      {/* Headline: the actual "what happened" */}
-      <div className="flex items-start gap-2 mb-1">
-        <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${dotClass}`} />
-        <p className="text-sm font-body font-bold text-white leading-snug group-hover:text-signal-cyan transition-colors">
-          {headline}
-        </p>
-      </div>
+    <div className="relative border-b border-carbon-700/50 group">
+      <button
+        onClick={onClick}
+        className="w-full text-left p-4 pr-9 hover:bg-carbon-700/40 transition-colors"
+      >
+        {/* Headline: the actual "what happened" */}
+        <div className="flex items-start gap-2 mb-1">
+          <span
+            className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${dotClass}`}
+          />
+          <p className="text-sm font-body font-bold text-white leading-snug group-hover:text-signal-cyan transition-colors">
+            {headline}
+          </p>
+        </div>
 
-      {/* Category + date */}
-      <div className="flex items-center justify-between pl-4 mb-1">
-        {event.headline && (
-          <span className="text-[9px] font-mono text-carbon-500 uppercase tracking-wider truncate max-w-[70%]">
-            {event.eventTypeLabel}
+        {/* Source + time */}
+        <div className="flex items-center justify-between pl-4 mb-1">
+          {domain && (
+            <span className="text-[9px] font-mono text-carbon-500 truncate max-w-[60%]">
+              {domain}
+              {event.numSources > 1 && ` · ${event.numSources} sources`}
+            </span>
+          )}
+          <span className="text-[9px] font-mono text-carbon-500 shrink-0 uppercase tracking-wider ml-auto">
+            {eventTimeLabel(event)}
           </span>
+        </div>
+
+        {/* Who */}
+        {actorsLine && (
+          <p className="text-[11px] font-mono text-carbon-400 truncate pl-4">
+            {actorsLine}
+          </p>
         )}
-        <span className="text-[9px] font-mono text-carbon-500 shrink-0 uppercase tracking-wider ml-auto">
-          {formatDay(event.day)}
-        </span>
-      </div>
 
-      {/* Who */}
-      <p className="text-[11px] font-mono text-carbon-400 truncate pl-4">
-        {event.actor1?.label || "Unspecified actor"}
-        {event.actor2 ? ` → ${event.actor2.label}` : ""}
-      </p>
+        {/* Where */}
+        {event.location && (
+          <p className="text-[10px] font-mono text-carbon-600 mt-1 truncate pl-4">
+            📍 {event.location}
+          </p>
+        )}
+      </button>
 
-      {/* Where */}
-      {event.location && (
-        <p className="text-[10px] font-mono text-carbon-600 mt-1 truncate pl-4">
-          📍 {event.location}
-        </p>
+      {/* A nested <button> inside the row's <button> would be invalid —
+          this sits as a sibling, absolutely positioned on top instead */}
+      {favoriteTarget && (
+        <div className="absolute top-3 right-3">
+          <FavoriteButton article={favoriteTarget} />
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 

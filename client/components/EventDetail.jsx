@@ -1,19 +1,20 @@
+import { useState } from "react";
 import { toneCategory, TONE_TEXT_CLASS, TONE_LABELS } from "../utils/eventTone";
+import {
+  validActorLabel,
+  fallbackHeadline,
+  eventTimeLabel,
+  getDomain,
+} from "../utils/eventDisplay";
+import FavoriteButton from "./FavoriteButton";
 
-function formatDay(day = "") {
-  if (day.length !== 8) return day;
-  return `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
-}
-
-function ActorRow({ label, actor }) {
+function ActorRow({ label, value }) {
   return (
     <div>
       <p className="text-[9px] font-mono text-carbon-600 uppercase tracking-widest mb-1">
         {label}
       </p>
-      <p className="text-sm font-body text-white">
-        {actor?.label || "Unspecified"}
-      </p>
+      <p className="text-sm font-body text-white">{value}</p>
     </div>
   );
 }
@@ -28,10 +29,22 @@ function coverageCaption(event) {
 }
 
 export default function EventDetail({ event, onClose }) {
+  const [imageFailed, setImageFailed] = useState(false);
   if (!event) return null;
 
   const tone = toneCategory(event.goldstein);
-  const hasHeadline = !!event.headline;
+  const headline = event.headline || fallbackHeadline(event);
+  const domain = getDomain(event.sourceUrl);
+  const actor1Label = validActorLabel(event.actor1);
+  const actor2Label = validActorLabel(event.actor2);
+  const favoriteTarget = event.sourceUrl
+    ? {
+        url: event.sourceUrl,
+        title: headline,
+        source: { name: domain },
+        type: "event",
+      }
+    : null;
 
   return (
     <div
@@ -39,58 +52,79 @@ export default function EventDetail({ event, onClose }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-carbon-900 border border-carbon-700/80 rounded-lg shadow-2xl"
+        className="w-full max-w-md max-h-[85vh] overflow-y-auto bg-carbon-900 border border-carbon-700/80 rounded-lg shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-4 border-b border-carbon-700/70">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  tone === "positive"
-                    ? "bg-signal-green"
-                    : tone === "negative"
-                      ? "bg-signal-red"
-                      : "bg-signal-amber"
-                }`}
-              />
-              <span className="text-[9px] font-mono text-carbon-500 uppercase tracking-widest truncate">
-                {event.eventTypeLabel}
-              </span>
-            </div>
-            {/* The actual headline, if the source article's page could be
-                read — this is "what happened," the category above is just
-                a tag */}
+            <span
+              className={`inline-block w-2 h-2 rounded-full mb-1.5 ${
+                tone === "positive"
+                  ? "bg-signal-green"
+                  : tone === "negative"
+                    ? "bg-signal-red"
+                    : "bg-signal-amber"
+              }`}
+            />
             <h2 className="font-body text-white text-base font-bold leading-snug">
-              {hasHeadline ? event.headline : event.eventTypeLabel}
+              {headline}
             </h2>
             <p className="text-[10px] font-mono text-carbon-500 mt-1.5">
-              {formatDay(event.day)} · {event.location || "Unknown location"}
+              {eventTimeLabel(event)} · {event.location || "Unknown location"}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-carbon-500 hover:text-white transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center shrink-0"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {favoriteTarget && (
+              <div className="w-8 h-8 flex items-center justify-center">
+                <FavoriteButton article={favoriteTarget} />
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="text-carbon-500 hover:text-white transition-colors text-2xl leading-none w-8 h-8 flex items-center justify-center"
+            >
+              ×
+            </button>
+          </div>
         </div>
+
+        {/* Image from the source article's page, when it has one */}
+        {event.image && !imageFailed && (
+          <img
+            src={event.image}
+            alt=""
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="w-full max-h-48 object-cover border-b border-carbon-700/50"
+          />
+        )}
 
         {/* Preview — the source article's own description, when available */}
         {event.preview && (
           <div className="px-5 py-3 border-b border-carbon-700/50">
-            <p className="text-[12px] font-body text-carbon-400 leading-relaxed line-clamp-4">
+            <p className="text-[12px] font-body text-carbon-400 leading-relaxed">
               {event.preview}
             </p>
           </div>
         )}
 
-        {/* Who was involved */}
-        <div className="grid grid-cols-2 gap-4 px-5 py-4 border-b border-carbon-700/50">
-          <ActorRow label="Initiated by" actor={event.actor1} />
-          <ActorRow label="Directed at" actor={event.actor2} />
-        </div>
+        {/* Who was involved — actors GDELT couldn't code or we couldn't
+            decode are omitted rather than shown as "Unspecified" */}
+        {(actor1Label || actor2Label) && (
+          <div
+            className={`grid gap-4 px-5 py-4 border-b border-carbon-700/50 ${
+              actor1Label && actor2Label ? "grid-cols-2" : "grid-cols-1"
+            }`}
+          >
+            {actor1Label && (
+              <ActorRow label="Initiated by" value={actor1Label} />
+            )}
+            {actor2Label && (
+              <ActorRow label="Directed at" value={actor2Label} />
+            )}
+          </div>
+        )}
 
         {/* Tone, in plain language first, raw score second */}
         <div className="px-5 py-4 border-b border-carbon-700/50">
@@ -111,7 +145,7 @@ export default function EventDetail({ event, onClose }) {
 
         {/* Source link — the "learn more" step */}
         {event.sourceUrl && (
-          <div className="px-5 py-4">
+          <div className="px-5 py-4 text-center">
             <a
               href={event.sourceUrl}
               target="_blank"
@@ -121,6 +155,11 @@ export default function EventDetail({ event, onClose }) {
               Read source article
               <span>→</span>
             </a>
+            {domain && (
+              <p className="text-[10px] font-mono text-carbon-500 mt-2">
+                {domain}
+              </p>
+            )}
           </div>
         )}
       </div>

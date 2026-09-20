@@ -23,9 +23,21 @@ const COL = {
   ACTION_GEO_COUNTRY_CODE: 53,
   ACTION_GEO_LAT: 56,
   ACTION_GEO_LONG: 57,
+  DATE_ADDED: 59,
   SOURCE_URL: 60,
 };
 const EXPECTED_COLUMN_COUNT = 61;
+
+function dateAddedToIso(raw) {
+  if (!raw || raw.length < 14) return null;
+  const y = raw.slice(0, 4);
+  const mo = raw.slice(4, 6);
+  const d = raw.slice(6, 8);
+  const h = raw.slice(8, 10);
+  const mi = raw.slice(10, 12);
+  const s = raw.slice(12, 14);
+  return `${y}-${mo}-${d}T${h}:${mi}:${s}Z`;
+}
 
 // Reads lastupdate.txt and returns the events file's URL + a cursor value
 // (the file's embedded timestamp) used to detect "is this new since last ingestion tick".
@@ -59,6 +71,7 @@ function normalizeRow(cols) {
   return {
     id: cols[COL.GLOBAL_EVENT_ID],
     day: cols[COL.DAY],
+    dateAdded: dateAddedToIso(cols[COL.DATE_ADDED]),
     actor1Code: cols[COL.ACTOR1_CODE] || null,
     actor2Code: cols[COL.ACTOR2_CODE] || null,
     eventCode: cols[COL.EVENT_CODE],

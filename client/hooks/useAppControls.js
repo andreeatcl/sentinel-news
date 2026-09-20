@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNews } from "./useNews";
 import { useEvents } from "./useEvents";
 
@@ -7,8 +7,8 @@ const MOBILE_BREAKPOINT = 768;
 export function useAppControls() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [sortBy, setSortBy] = useState("relevancy");
+  const [articlesSortDir, setArticlesSortDir] = useState("desc");
   const [timeRange, setTimeRange] = useState("7d");
-  const [eventsTimeRange, setEventsTimeRange] = useState("7d");
   const [includePoliticalKeywords, setIncludePoliticalKeywords] =
     useState(true);
   const [useTopSourcesOnly, setUseTopSourcesOnly] = useState(false);
@@ -38,7 +38,7 @@ export function useAppControls() {
   const articlesFetchedRef = useRef(false);
 
   const {
-    articles,
+    articles: rawArticles,
     loading,
     loadingMore,
     canLoadMore,
@@ -46,7 +46,6 @@ export function useAppControls() {
     meta,
     activeQuery,
     search,
-    resort,
     loadMore,
     setTopSourcesOnly: applyTopSourcesFilter,
     clear,
@@ -58,10 +57,21 @@ export function useAppControls() {
     loadingMore: eventsLoadingMore,
     error: eventsError,
     hasMore: eventsHasMore,
+    filters: eventsFilters,
     search: searchEvents,
     loadMore: loadMoreEvents,
     clear: clearEvents,
   } = useEvents();
+
+  const articles = useMemo(
+    () =>
+      articlesSortDir === "asc" ? [...rawArticles].reverse() : rawArticles,
+    [rawArticles, articlesSortDir],
+  );
+
+  const handleArticlesSortDirToggle = useCallback(() => {
+    setArticlesSortDir((d) => (d === "asc" ? "desc" : "asc"));
+  }, []);
 
   const runSearch = useCallback(
     ({
@@ -70,6 +80,8 @@ export function useAppControls() {
       queryOptions = {},
       raw = false,
       includePoliticalKeywords: political = includePoliticalKeywords,
+      sortBy: sortByOverride = sortBy,
+      timeRange: timeRangeOverride = timeRange,
     }) => {
       searchContextRef.current = { topic, extraKeywords, queryOptions, raw };
       search({
@@ -77,8 +89,8 @@ export function useAppControls() {
         extraKeywords,
         queryOptions,
         raw,
-        sortBy,
-        timeRange,
+        sortBy: sortByOverride,
+        timeRange: timeRangeOverride,
         includePoliticalKeywords: political,
         useTopSourcesOnly,
         page: 1,
@@ -98,9 +110,9 @@ export function useAppControls() {
         raw: false,
       };
       articlesFetchedRef.current = false;
-      searchEvents(countryName, eventsTimeRange);
+      searchEvents(countryName);
     },
-    [searchEvents, eventsTimeRange],
+    [searchEvents],
   );
 
   const handleOpenArticlesTab = useCallback(() => {
@@ -120,28 +132,36 @@ export function useAppControls() {
     [runSearch, clearEvents],
   );
 
-  const handleEventsTimeRangeChange = useCallback(
-    (newRange) => {
-      setEventsTimeRange(newRange);
-      if (selectedCountry) searchEvents(selectedCountry, newRange);
+  const handleEventsFilterChange = useCallback(
+    (patch) => {
+      if (selectedCountry) searchEvents(selectedCountry, patch);
     },
     [searchEvents, selectedCountry],
   );
 
-  const handleSortChange = useCallback(
-    (newSort) => {
-      setSortBy(newSort);
-      resort(newSort, timeRange);
+  const handleApplyArticleFilters = useCallback(
+    ({
+      sortBy: newSortBy,
+      timeRange: newTimeRange,
+      includePoliticalKeywords: newPolitical,
+    }) => {
+      setSortBy(newSortBy);
+      setTimeRange(newTimeRange);
+      setIncludePoliticalKeywords(newPolitical);
+      const { topic, extraKeywords, queryOptions, raw } =
+        searchContextRef.current;
+      if (!topic) return;
+      runSearch({
+        topic,
+        extraKeywords,
+        queryOptions,
+        raw,
+        sortBy: newSortBy,
+        timeRange: newTimeRange,
+        includePoliticalKeywords: newPolitical,
+      });
     },
-    [resort, timeRange],
-  );
-
-  const handleTimeRangeChange = useCallback(
-    (newRange) => {
-      setTimeRange(newRange);
-      resort(sortBy, newRange);
-    },
-    [resort, sortBy],
+    [runSearch],
   );
 
   const handleExtraSearch = useCallback(
@@ -149,15 +169,6 @@ export function useAppControls() {
       runSearch({ topic, extraKeywords, queryOptions });
     },
     [runSearch],
-  );
-
-  const handlePoliticalModeChange = useCallback(
-    (enabled) => {
-      setIncludePoliticalKeywords(enabled);
-      if (!selectedCountry) return;
-      runSearch({ topic: selectedCountry, includePoliticalKeywords: enabled });
-    },
-    [runSearch, selectedCountry],
   );
 
   const handleClose = useCallback(() => {
@@ -183,9 +194,9 @@ export function useAppControls() {
       setSelectedCountry(topic);
       articlesFetchedRef.current = true;
       runSearch({ topic, extraKeywords, queryOptions });
-      searchEvents(topic, eventsTimeRange);
+      searchEvents(topic);
     },
-    [runSearch, searchEvents, eventsTimeRange],
+    [runSearch, searchEvents],
   );
 
   const getCurrentSearch = useCallback(
@@ -196,6 +207,7 @@ export function useAppControls() {
   return {
     selectedCountry,
     sortBy,
+    articlesSortDir,
     timeRange,
     includePoliticalKeywords,
     useTopSourcesOnly,
@@ -212,16 +224,15 @@ export function useAppControls() {
     eventsLoadingMore,
     eventsError,
     eventsHasMore,
-    eventsTimeRange,
+    eventsFilters,
     handleCountryClick,
     handleGlobalSearch,
     handleOpenArticlesTab,
-    handleSortChange,
-    handleTimeRangeChange,
-    handleEventsTimeRangeChange,
+    handleApplyArticleFilters,
+    handleArticlesSortDirToggle,
+    handleEventsFilterChange,
     handleLoadMoreEvents: loadMoreEvents,
     handleExtraSearch,
-    handlePoliticalModeChange,
     handleClose,
     handleLoadMore,
     handleTopSourcesToggle,

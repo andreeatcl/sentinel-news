@@ -5,6 +5,7 @@ import { decodeEventCode } from "../lib/cameoEventCodes.js";
 import { getEventsForRange } from "../lib/eventsStore.js";
 import { ingestLatestEventsFile } from "../services/gdeltEventsService.js";
 import { fetchPageMetadata } from "../lib/pageMetadata.js";
+import { isLowQualityDomain } from "../lib/lowQualitySources.js";
 
 const MAX_RANGE_DAYS = 30;
 const DEFAULT_LIMIT = 20;
@@ -44,6 +45,36 @@ function significanceScore(row) {
   return quadWeight * (1 + toneMagnitude) * (1 + mentionSignal);
 }
 
+function toneCategoryForRow(goldstein) {
+  if (goldstein > 1) return "positive";
+  if (goldstein < -1) return "negative";
+  return "neutral";
+}
+
+function hasStateActor(row) {
+  return !!(
+    decodeActor(row.actor1Code)?.country || decodeActor(row.actor2Code)?.country
+  );
+}
+
+function dateAddedTimestamp(row) {
+  if (row.dateAdded) return Date.parse(row.dateAdded);
+  const day = row.day || "";
+  return Date.parse(
+    `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}T00:00:00Z`,
+  );
+}
+
+function coverageScore(row) {
+  return row.numSources * 1000 + row.numMentions;
+}
+
+const SORTERS = {
+  significance: (a, b) => significanceScore(b) - significanceScore(a),
+  date: (a, b) => dateAddedTimestamp(b) - dateAddedTimestamp(a),
+  coverage: (a, b) => coverageScore(b) - coverageScore(a),
+};
+
 events.get("/events", async (c) => {
   const {
     country,
@@ -51,6 +82,10 @@ events.get("/events", async (c) => {
     to,
     limit = String(DEFAULT_LIMIT),
     offset = "0",
+    category = "",
+    tone = "",
+    sortBy = "significance",
+    sortDir = "desc",
   } = c.req.query();
 
   if (!country) {
@@ -86,12 +121,26 @@ events.get("/events", async (c) => {
   }
 
   const rawRows = await getEventsForRange(c.env, fipsCodes, fromDay, toDay);
-  const rows = dedupeBySourceUrl(rawRows);
+  let rows = dedupeBySourceUrl(rawRows);
 
-  //rank by significance and account for countries with less results
-  const rankedAll = [...rows].sort(
-    (a, b) => significanceScore(b) - significanceScore(a),
+  rows = rows.filter(
+    (row) => hasStateActor(row) && !isLowQualityDomain(row.sourceUrl),
   );
+
+  const categories = category ? category.split(",").filter(Boolean) : [];
+  const tones = tone ? tone.split(",").filter(Boolean) : [];
+  if (categories.length > 0) {
+    rows = rows.filter((row) => categories.includes(String(row.eventRootCode)));
+  }
+  if (tones.length > 0) {
+    rows = rows.filter((row) =>
+      tones.includes(toneCategoryForRow(row.goldstein)),
+    );
+  }
+
+  const rankedAll = [...rows].sort(SORTERS[sortBy] || SORTERS.significance);
+  if (sortDir === "asc") rankedAll.reverse();
+
   const offsetNum = Number(offset);
   const limitNum = Number(limit);
   const ranked = rankedAll.slice(offsetNum, offsetNum + limitNum);
@@ -109,6 +158,7 @@ events.get("/events", async (c) => {
         eventTypeLabel: decodeEventCode(row.eventCode, row.eventRootCode),
         headline: pageMeta?.title || null,
         preview: pageMeta?.description || null,
+        image: pageMeta?.image || null,
       };
     }),
   );

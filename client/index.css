@@ -104,6 +104,16 @@ body {
   animation: shimmer 1.4s infinite;
 }
 
+/* Hides the scrollbar on a scrollable element while keeping it scrollable
+   — used for the horizontal-scroll pill strips (e.g. Category filter) */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Chromium Edge */
+}
+
 /* Search bar glow on focus */
 .search-glow:focus-within {
   box-shadow:

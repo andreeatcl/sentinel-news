@@ -1,5 +1,15 @@
 import { useState, useCallback, useRef } from "react";
 import { fetchEvents } from "../utils/eventsApi";
+import { CAMEO_ROOT_CATEGORIES } from "../utils/cameoCategories";
+import { TONE_LABELS } from "../utils/eventTone";
+
+const DEFAULT_FILTERS = {
+  timeRange: "7d",
+  category: CAMEO_ROOT_CATEGORIES.map((c) => c.code),
+  tone: Object.keys(TONE_LABELS),
+  sortBy: "significance",
+  sortDir: "desc",
+};
 
 export function useEvents() {
   const [events, setEvents] = useState([]);
@@ -7,29 +17,32 @@ export function useEvents() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [hasMore, setHasMore] = useState(false);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const countryRef = useRef(null);
-  const timeRangeRef = useRef("7d");
 
-  const search = useCallback(async (country, timeRange = "7d") => {
-    countryRef.current = country;
-    timeRangeRef.current = timeRange;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchEvents({ country, timeRange, offset: 0 });
-      // ignore late responses from a country/range we've since moved on from
-      if (countryRef.current !== country) return;
-      setEvents(data.events || []);
-      setHasMore(!!data.meta?.hasMore);
-    } catch (err) {
-      if (countryRef.current !== country) return;
-      setError(err.message);
-      setEvents([]);
-      setHasMore(false);
-    } finally {
-      if (countryRef.current === country) setLoading(false);
-    }
-  }, []);
+  const search = useCallback(
+    async (country, patch = {}) => {
+      const merged = { ...filters, ...patch };
+      setFilters(merged);
+      countryRef.current = country;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchEvents({ country, ...merged, offset: 0 });
+        if (countryRef.current !== country) return;
+        setEvents(data.events || []);
+        setHasMore(!!data.meta?.hasMore);
+      } catch (err) {
+        if (countryRef.current !== country) return;
+        setError(err.message);
+        setEvents([]);
+        setHasMore(false);
+      } finally {
+        if (countryRef.current === country) setLoading(false);
+      }
+    },
+    [filters],
+  );
 
   const loadMore = useCallback(async () => {
     const country = countryRef.current;
@@ -38,7 +51,7 @@ export function useEvents() {
     try {
       const data = await fetchEvents({
         country,
-        timeRange: timeRangeRef.current,
+        ...filters,
         offset: events.length,
       });
       if (countryRef.current !== country) return;
@@ -50,7 +63,7 @@ export function useEvents() {
     } finally {
       if (countryRef.current === country) setLoadingMore(false);
     }
-  }, [events.length, loading, loadingMore]);
+  }, [events.length, loading, loadingMore, filters]);
 
   const clear = useCallback(() => {
     countryRef.current = null;
@@ -67,6 +80,7 @@ export function useEvents() {
     loadingMore,
     error,
     hasMore,
+    filters,
     search,
     loadMore,
     clear,

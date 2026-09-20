@@ -3,6 +3,7 @@ import countryKeywords from "../../../temporary/countryKeywords.json";
 const GDELT_DOC_BASE = "https://api.gdeltproject.org/api/v2/doc/doc";
 const MAX_KEYWORDS = 12; // keeps the query under GDELT's length limit
 const MAX_RECORDS = 75;
+const FETCH_TIMEOUT_MS = 5000;
 
 function normalizeCountryKey(value = "") {
   return value
@@ -63,7 +64,14 @@ export async function fetchGdeltDoc({ query, from }) {
     );
   }
 
-  const response = await fetch(url.toString());
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  let response;
+  try {
+    response = await fetch(url.toString(), { signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
   if (!response.ok) return { articles: [] };
 
   const data = await response.json().catch(() => ({ articles: [] }));

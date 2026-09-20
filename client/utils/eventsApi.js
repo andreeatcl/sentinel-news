@@ -22,12 +22,29 @@ async function fetchWithTimeout(url, timeoutMs) {
   }
 }
 
-export async function fetchEvents({ country, timeRange = "7d", offset = 0 }) {
+export async function fetchEvents({
+  country,
+  timeRange = "7d",
+  offset = 0,
+  category = [],
+  tone = [],
+  sortBy = "significance",
+  sortDir = "desc",
+}) {
   const days = EVENTS_RANGE_DAYS[timeRange] ?? 7;
   const to = toDateOnly(new Date());
   const from = toDateOnly(new Date(Date.now() - days * 86400000));
 
-  const params = new URLSearchParams({ country, from, to, offset });
+  const params = new URLSearchParams({
+    country,
+    from,
+    to,
+    offset,
+    sortBy,
+    sortDir,
+  });
+  if (category.length) params.set("category", category.join(","));
+  if (tone.length) params.set("tone", tone.join(","));
   const res = await fetchWithTimeout(
     `${BASE}/events?${params}`,
     REQUEST_TIMEOUT_MS,

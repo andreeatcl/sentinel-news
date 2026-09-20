@@ -1,13 +1,14 @@
 import { useState } from "react";
 import WorldMap from "./components/WorldMap";
 import TopBar from "./components/TopBar";
-import NewsSidebar from "./components/NewsSidebar";
+import MonitorPanel from "./components/MonitorPanel";
 import SourcesModal from "./components/SourcesModal";
 import ApiKeysModal from "./components/ApiKeysModal";
 import FavoritesPanel from "./components/FavoritesPanel";
 import SavedSearchesPanel from "./components/SavedSearchesPanel";
 import DataBackupModal from "./components/DataBackupModal";
 import EventDetail from "./components/EventDetail";
+import ArticleDetail from "./components/ArticleDetail";
 import { useAppControls } from "./hooks/useAppControls";
 import { hasAnyApiKey, addSavedSearch } from "./utils/storage";
 
@@ -18,10 +19,12 @@ export default function App() {
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
   const {
     selectedCountry,
     sortBy,
+    articlesSortDir,
     timeRange,
     includePoliticalKeywords,
     useTopSourcesOnly,
@@ -38,16 +41,15 @@ export default function App() {
     eventsLoadingMore,
     eventsError,
     eventsHasMore,
-    eventsTimeRange,
+    eventsFilters,
     handleCountryClick,
     handleGlobalSearch,
     handleOpenArticlesTab,
-    handleSortChange,
-    handleTimeRangeChange,
-    handleEventsTimeRangeChange,
+    handleApplyArticleFilters,
+    handleArticlesSortDirToggle,
+    handleEventsFilterChange,
     handleLoadMoreEvents,
     handleExtraSearch,
-    handlePoliticalModeChange,
     handleClose,
     handleLoadMore,
     handleTopSourcesToggle,
@@ -55,10 +57,10 @@ export default function App() {
     getCurrentSearch,
   } = useAppControls();
 
-  // a country selection opens the sidebar
+  // a country selection opens the panel
   // Events tab loads immediately
   // Articles tab only fetches once it is opened
-  const sidebarOpen =
+  const panelOpen =
     !!selectedCountry || loading || articles.length > 0 || !!error || !!meta;
 
   function handleSaveSearch() {
@@ -100,15 +102,18 @@ export default function App() {
         event={selectedEvent}
         onClose={() => setSelectedEvent(null)}
       />
+      <ArticleDetail
+        article={selectedArticle}
+        onClose={() => setSelectedArticle(null)}
+      />
 
-      {/* Map layer — shrinks when sidebar opens */}
+      {/* Map layer — stays full-size; blurred/dimmed behind the panel
+          instead of resized, now that the panel is a near-fullscreen
+          overlay rather than a docked sidebar */}
       <div
-        className="absolute inset-0 transition-all duration-300"
-        style={
-          isMobile
-            ? { top: "56px", bottom: sidebarOpen ? "46%" : "0" }
-            : { right: sidebarOpen ? "380px" : "0" }
-        }
+        className={`absolute inset-0 transition-all duration-300 ${
+          panelOpen ? "blur-sm brightness-75" : ""
+        }`}
       >
         <WorldMap
           selectedCountry={selectedCountry}
@@ -132,23 +137,23 @@ export default function App() {
         isMobile={isMobile}
       />
 
-      {/* News sidebar */}
-      {sidebarOpen && (
-        <NewsSidebar
+      {/* Events/Articles panel — near-fullscreen overlay, not a docked sidebar */}
+      {panelOpen && (
+        <MonitorPanel
           articles={articles}
           loading={loading}
           error={error}
           meta={meta}
           selectedCountry={selectedCountry}
           onClose={handleClose}
-          onSortChange={handleSortChange}
-          onTimeRangeChange={handleTimeRangeChange}
+          onApplyArticleFilters={handleApplyArticleFilters}
+          articlesSortDir={articlesSortDir}
+          onToggleArticlesSortDir={handleArticlesSortDirToggle}
           onExtraSearch={handleExtraSearch}
           onLoadMore={handleLoadMore}
           loadingMore={loadingMore}
           canLoadMore={canLoadMore}
           includePoliticalKeywords={includePoliticalKeywords}
-          onPoliticalModeChange={handlePoliticalModeChange}
           sortBy={sortBy}
           timeRange={timeRange}
           useTopSourcesOnly={useTopSourcesOnly}
@@ -159,36 +164,26 @@ export default function App() {
           eventsLoadingMore={eventsLoadingMore}
           eventsError={eventsError}
           eventsHasMore={eventsHasMore}
-          eventsTimeRange={eventsTimeRange}
-          onEventsTimeRangeChange={handleEventsTimeRangeChange}
+          eventsFilters={eventsFilters}
+          onEventsFilterChange={handleEventsFilterChange}
           onLoadMoreEvents={handleLoadMoreEvents}
           onSelectEvent={setSelectedEvent}
+          onSelectArticle={setSelectedArticle}
           onOpenArticlesTab={handleOpenArticlesTab}
-          isMobile={isMobile}
         />
       )}
 
-      {/* Bottom HUD bar */}
-      <div
-        className="absolute bottom-0 left-0 right-0 z-[998] flex items-center justify-between px-4 py-2 pointer-events-none"
-        style={
-          isMobile ? { right: "0" } : { right: sidebarOpen ? "380px" : "0" }
-        }
-      >
-        <div className="flex items-center gap-4">
+      {/* Bottom HUD bar — hidden once the panel covers the screen */}
+      {!panelOpen && (
+        <div className="absolute bottom-0 left-0 right-0 z-[998] flex items-center justify-between px-4 py-2 pointer-events-none">
           <span className="text-[9px] font-mono text-carbon-600 uppercase tracking-widest hidden sm:inline">
             Click any country to monitor
           </span>
-          {selectedCountry && (
-            <span className="text-[9px] font-mono text-signal-cyan uppercase tracking-widest">
-              ◆ {selectedCountry}
-            </span>
-          )}
+          <span className="text-[9px] font-mono text-carbon-700 uppercase tracking-widest">
+            SENTINEL v1.0 · Global News Monitor
+          </span>
         </div>
-        <span className="text-[9px] font-mono text-carbon-700 uppercase tracking-widest">
-          SENTINEL v1.0 · Global News Monitor
-        </span>
-      </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,18 @@ const NEWS_API_BASE = "https://newsapi.org/v2";
 
 const USER_AGENT = "Sentinel/1.0 (personal news monitor)";
 
+const FETCH_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export async function fetchEverything({
   apiKey,
   q,
@@ -23,7 +35,7 @@ export async function fetchEverything({
   url.searchParams.set("searchIn", searchIn);
   if (from) url.searchParams.set("from", from);
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithTimeout(url.toString(), {
     headers: { "X-Api-Key": apiKey, "User-Agent": USER_AGENT },
   });
 
@@ -42,7 +54,7 @@ export async function fetchTopHeadlines({
   url.searchParams.set("category", category);
   url.searchParams.set("pageSize", pageSize);
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithTimeout(url.toString(), {
     headers: { "X-Api-Key": apiKey, "User-Agent": USER_AGENT },
   });
 
