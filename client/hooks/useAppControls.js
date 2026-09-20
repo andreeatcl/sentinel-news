@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNews } from "./useNews";
+import { useEvents } from "./useEvents";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -7,6 +8,7 @@ export function useAppControls() {
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [sortBy, setSortBy] = useState("relevancy");
   const [timeRange, setTimeRange] = useState("7d");
+  const [eventsTimeRange, setEventsTimeRange] = useState("7d");
   const [includePoliticalKeywords, setIncludePoliticalKeywords] =
     useState(true);
   const [useTopSourcesOnly, setUseTopSourcesOnly] = useState(false);
@@ -32,6 +34,8 @@ export function useAppControls() {
     queryOptions: {},
     raw: false,
   });
+  // tracks whether the NewsAPI search has actually fired for the current country yet
+  const articlesFetchedRef = useRef(false);
 
   const {
     articles,
@@ -47,6 +51,17 @@ export function useAppControls() {
     setTopSourcesOnly: applyTopSourcesFilter,
     clear,
   } = useNews();
+
+  const {
+    events,
+    loading: eventsLoading,
+    loadingMore: eventsLoadingMore,
+    error: eventsError,
+    hasMore: eventsHasMore,
+    search: searchEvents,
+    loadMore: loadMoreEvents,
+    clear: clearEvents,
+  } = useEvents();
 
   const runSearch = useCallback(
     ({
@@ -76,18 +91,41 @@ export function useAppControls() {
   const handleCountryClick = useCallback(
     (countryName) => {
       setSelectedCountry(countryName);
-      runSearch({ topic: countryName });
+      searchContextRef.current = {
+        topic: countryName,
+        extraKeywords: "",
+        queryOptions: {},
+        raw: false,
+      };
+      articlesFetchedRef.current = false;
+      searchEvents(countryName, eventsTimeRange);
     },
-    [runSearch],
+    [searchEvents, eventsTimeRange],
   );
+
+  const handleOpenArticlesTab = useCallback(() => {
+    if (articlesFetchedRef.current || !selectedCountry) return;
+    articlesFetchedRef.current = true;
+    runSearch({ topic: selectedCountry });
+  }, [runSearch, selectedCountry]);
 
   // country-less global search
   const handleGlobalSearch = useCallback(
     ({ topic, raw }) => {
       setSelectedCountry(null);
+      articlesFetchedRef.current = true;
       runSearch({ topic, raw: raw ?? true, includePoliticalKeywords: true });
+      clearEvents();
     },
-    [runSearch],
+    [runSearch, clearEvents],
+  );
+
+  const handleEventsTimeRangeChange = useCallback(
+    (newRange) => {
+      setEventsTimeRange(newRange);
+      if (selectedCountry) searchEvents(selectedCountry, newRange);
+    },
+    [searchEvents, selectedCountry],
   );
 
   const handleSortChange = useCallback(
@@ -124,8 +162,10 @@ export function useAppControls() {
 
   const handleClose = useCallback(() => {
     setSelectedCountry(null);
+    articlesFetchedRef.current = false;
     clear();
-  }, [clear]);
+    clearEvents();
+  }, [clear, clearEvents]);
 
   const handleLoadMore = useCallback(() => {
     loadMore(sortBy, timeRange);
@@ -141,9 +181,11 @@ export function useAppControls() {
   const handleRunSavedSearch = useCallback(
     ({ topic, extraKeywords, queryOptions }) => {
       setSelectedCountry(topic);
+      articlesFetchedRef.current = true;
       runSearch({ topic, extraKeywords, queryOptions });
+      searchEvents(topic, eventsTimeRange);
     },
-    [runSearch],
+    [runSearch, searchEvents, eventsTimeRange],
   );
 
   const getCurrentSearch = useCallback(
@@ -165,10 +207,19 @@ export function useAppControls() {
     error,
     meta,
     activeQuery,
+    events,
+    eventsLoading,
+    eventsLoadingMore,
+    eventsError,
+    eventsHasMore,
+    eventsTimeRange,
     handleCountryClick,
     handleGlobalSearch,
+    handleOpenArticlesTab,
     handleSortChange,
     handleTimeRangeChange,
+    handleEventsTimeRangeChange,
+    handleLoadMoreEvents: loadMoreEvents,
     handleExtraSearch,
     handlePoliticalModeChange,
     handleClose,

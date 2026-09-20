@@ -7,6 +7,7 @@ import ApiKeysModal from "./components/ApiKeysModal";
 import FavoritesPanel from "./components/FavoritesPanel";
 import SavedSearchesPanel from "./components/SavedSearchesPanel";
 import DataBackupModal from "./components/DataBackupModal";
+import EventDetail from "./components/EventDetail";
 import { useAppControls } from "./hooks/useAppControls";
 import { hasAnyApiKey, addSavedSearch } from "./utils/storage";
 
@@ -16,6 +17,7 @@ export default function App() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const {
     selectedCountry,
@@ -31,10 +33,19 @@ export default function App() {
     error,
     meta,
     activeQuery,
+    events,
+    eventsLoading,
+    eventsLoadingMore,
+    eventsError,
+    eventsHasMore,
+    eventsTimeRange,
     handleCountryClick,
     handleGlobalSearch,
+    handleOpenArticlesTab,
     handleSortChange,
     handleTimeRangeChange,
+    handleEventsTimeRangeChange,
+    handleLoadMoreEvents,
     handleExtraSearch,
     handlePoliticalModeChange,
     handleClose,
@@ -44,7 +55,11 @@ export default function App() {
     getCurrentSearch,
   } = useAppControls();
 
-  const sidebarOpen = loading || articles.length > 0 || !!error || !!meta;
+  // a country selection opens the sidebar
+  // Events tab loads immediately
+  // Articles tab only fetches once it is opened
+  const sidebarOpen =
+    !!selectedCountry || loading || articles.length > 0 || !!error || !!meta;
 
   function handleSaveSearch() {
     const { topic, extraKeywords, queryOptions } = getCurrentSearch();
@@ -81,6 +96,10 @@ export default function App() {
         isOpen={showBackup}
         onClose={() => setShowBackup(false)}
       />
+      <EventDetail
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+      />
 
       {/* Map layer — shrinks when sidebar opens */}
       <div
@@ -94,6 +113,8 @@ export default function App() {
         <WorldMap
           selectedCountry={selectedCountry}
           onCountryClick={handleCountryClick}
+          events={events}
+          onEventClick={setSelectedEvent}
         />
       </div>
 
@@ -133,6 +154,16 @@ export default function App() {
           useTopSourcesOnly={useTopSourcesOnly}
           onTopSourcesToggle={handleTopSourcesToggle}
           onSaveSearch={handleSaveSearch}
+          events={events}
+          eventsLoading={eventsLoading}
+          eventsLoadingMore={eventsLoadingMore}
+          eventsError={eventsError}
+          eventsHasMore={eventsHasMore}
+          eventsTimeRange={eventsTimeRange}
+          onEventsTimeRangeChange={handleEventsTimeRangeChange}
+          onLoadMoreEvents={handleLoadMoreEvents}
+          onSelectEvent={setSelectedEvent}
+          onOpenArticlesTab={handleOpenArticlesTab}
           isMobile={isMobile}
         />
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, CircleMarker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { toneCategory, TONE_HEX } from "../utils/eventTone";
 
 const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION = "&copy; OpenStreetMap contributors";
@@ -116,7 +117,34 @@ function GeoJSONLayer({ geoData, selectedCountry, onCountryClick }) {
   );
 }
 
-export default function WorldMap({ selectedCountry, onCountryClick }) {
+// One circle marker per event, colored by Goldstein-derived tone. Rows
+// without usable coordinates (rare, but GDELT geocoding isn't perfect) are
+// skipped rather than plotted at 0,0.
+function EventMarkers({ events, onEventClick }) {
+  return events
+    .filter((event) => Number.isFinite(event.lat) && Number.isFinite(event.lon))
+    .map((event) => (
+      <CircleMarker
+        key={event.id}
+        center={[event.lat, event.lon]}
+        radius={5}
+        pathOptions={{
+          color: TONE_HEX[toneCategory(event.goldstein)],
+          fillColor: TONE_HEX[toneCategory(event.goldstein)],
+          fillOpacity: 0.7,
+          weight: 1.5,
+        }}
+        eventHandlers={{ click: () => onEventClick(event) }}
+      />
+    ));
+}
+
+export default function WorldMap({
+  selectedCountry,
+  onCountryClick,
+  events = [],
+  onEventClick,
+}) {
   const [geoData, setGeoData] = useState(null);
   const [geoError, setGeoError] = useState(false);
 
@@ -169,6 +197,7 @@ export default function WorldMap({ selectedCountry, onCountryClick }) {
             onCountryClick={onCountryClick}
           />
         )}
+        <EventMarkers events={events} onEventClick={onEventClick} />
       </MapContainer>
 
       {/* GeoJSON loading overlay */}

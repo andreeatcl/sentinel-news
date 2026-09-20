@@ -1,9 +1,13 @@
 name = "sentinel-worker"
 main = "src/index.js"
-compatibility_date = "2026-09-06"
+compatibility_date = "2026-05-03"
 
 # work in progress, ignore for now
 [[kv_namespaces]]
 binding = "CACHE"
 id = "REPLACE_WITH_KV_NAMESPACE_ID"
 preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+
+# see worker/src/scheduled.js.
+[triggers]
+crons = ["*/15 * * * *"]

@@ -69,7 +69,13 @@ export function useNews() {
       }
       setActiveQuery(q);
       try {
-        const data = await fetchNews({ q, sortBy, timeRange, page });
+        const data = await fetchNews({
+          q,
+          topic: raw ? undefined : topic,
+          sortBy,
+          timeRange,
+          page,
+        });
         const nextArticles = sanitizeArticles(data.articles || []);
         setAllArticles((prev) => {
           const nextAll = append

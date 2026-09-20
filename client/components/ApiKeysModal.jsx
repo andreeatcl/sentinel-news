@@ -3,7 +3,16 @@ import { getApiKeys, setApiKeys } from "../utils/storage";
 import { testApiKey } from "../utils/newsApi";
 
 // Test status per field: "idle" | "testing" | "valid" | "invalid"
-function KeyField({ label, hint, value, onChange, status, onTest, active }) {
+function KeyField({
+  label,
+  hint,
+  value,
+  onChange,
+  status,
+  message,
+  onTest,
+  active,
+}) {
   const [visible, setVisible] = useState(false);
 
   const statusColor =
@@ -68,6 +77,7 @@ function KeyField({ label, hint, value, onChange, status, onTest, active }) {
       {statusLabel && (
         <p className={`text-[10px] font-mono mt-1.5 ${statusColor}`}>
           {statusLabel}
+          {status === "invalid" && message ? ` — ${message}` : ""}
         </p>
       )}
     </div>
@@ -80,6 +90,8 @@ export default function ApiKeysModal({ isOpen, onClose }) {
   const [lastGood, setLastGood] = useState("primary");
   const [primaryStatus, setPrimaryStatus] = useState("idle");
   const [backupStatus, setBackupStatus] = useState("idle");
+  const [primaryMessage, setPrimaryMessage] = useState("");
+  const [backupMessage, setBackupMessage] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -95,10 +107,12 @@ export default function ApiKeysModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  async function handleTest(key, setStatus) {
+  async function handleTest(key, setStatus, setMessage) {
     setStatus("testing");
+    setMessage("");
     const result = await testApiKey(key);
     setStatus(result.valid ? "valid" : "invalid");
+    setMessage(result.message || "");
   }
 
   function handleSave() {
@@ -142,7 +156,10 @@ export default function ApiKeysModal({ isOpen, onClose }) {
             value={primary}
             onChange={setPrimary}
             status={primaryStatus}
-            onTest={() => handleTest(primary, setPrimaryStatus)}
+            message={primaryMessage}
+            onTest={() =>
+              handleTest(primary, setPrimaryStatus, setPrimaryMessage)
+            }
             active={lastGood === "primary"}
           />
 
@@ -152,7 +169,8 @@ export default function ApiKeysModal({ isOpen, onClose }) {
             value={backup}
             onChange={setBackup}
             status={backupStatus}
-            onTest={() => handleTest(backup, setBackupStatus)}
+            message={backupMessage}
+            onTest={() => handleTest(backup, setBackupStatus, setBackupMessage)}
             active={lastGood === "backup"}
           />
         </div>

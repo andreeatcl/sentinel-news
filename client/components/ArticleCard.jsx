@@ -32,8 +32,20 @@ export default function ArticleCard({ article, index }) {
     >
       {/* Source + time */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-mono font-bold text-signal-cyan uppercase tracking-wider truncate max-w-[60%]">
-          {article.source?.name || domain}
+        <span className="flex items-center gap-1.5 min-w-0 max-w-[60%]">
+          <span className="text-[10px] font-mono font-bold text-signal-cyan uppercase tracking-wider truncate">
+            {article.source?.name || domain}
+          </span>
+          {article._provider === "gdelt" && (
+            <span className="text-[8px] font-mono font-bold text-signal-amber border border-signal-amber/40 bg-signal-amber/10 rounded px-1 py-0.5 uppercase tracking-wider shrink-0">
+              GDELT
+            </span>
+          )}
+          {article.language && !/^english$/i.test(article.language) && (
+            <span className="text-[8px] font-mono text-carbon-500 border border-carbon-600/60 rounded px-1 py-0.5 uppercase tracking-wider shrink-0">
+              {article.language.slice(0, 3)}
+            </span>
+          )}
         </span>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[10px] font-mono text-carbon-500">

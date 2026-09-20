@@ -5,6 +5,8 @@ import KeywordQueryModal from "./KeywordQueryModal";
 import ArticleCard, { SkeletonCard } from "./ArticleCard";
 import SidebarFilterBar from "./SidebarFilterBar";
 import SidebarQueryControls from "./SidebarQueryControls";
+import EventsFilterBar from "./EventsFilterBar";
+import EventsList from "./EventsList";
 
 export default function NewsSidebar({
   articles,
@@ -26,22 +28,55 @@ export default function NewsSidebar({
   useTopSourcesOnly,
   onTopSourcesToggle,
   onSaveSearch,
+  events,
+  eventsLoading,
+  eventsLoadingMore,
+  eventsError,
+  eventsHasMore,
+  eventsTimeRange,
+  onEventsTimeRangeChange,
+  onLoadMoreEvents,
+  onSelectEvent,
+  onOpenArticlesTab,
   isMobile = false,
 }) {
   const [queryPreview, setQueryPreview] = useState("");
   const [showKeywordModal, setShowKeywordModal] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  // Events first — it's keyless/free, unlike Articles (NewsAPI, quota-
+  // limited), which only fetches once its tab is actually opened.
+  const [activeTab, setActiveTab] = useState("events");
+  // Cooldown after each "Load More" click — each additional event costs a
+  // subrequest (its headline fetch), so this discourages rapid repeated
+  // clicks from bursting a lot of scraping/subrequests at once.
+  const EVENTS_LOAD_MORE_COOLDOWN_MS = 4000;
+  const [eventsLoadMoreCooldown, setEventsLoadMoreCooldown] = useState(false);
+
+  function handleLoadMoreEventsClick() {
+    onLoadMoreEvents();
+    setEventsLoadMoreCooldown(true);
+    setTimeout(
+      () => setEventsLoadMoreCooldown(false),
+      EVENTS_LOAD_MORE_COOLDOWN_MS,
+    );
+  }
 
   const availableKeywords = useMemo(
     () => (selectedCountry ? getCountryKeywordOptions(selectedCountry) : []),
     [selectedCountry],
   );
 
-  // reset query preview when switching countries
+  // reset query preview & active tab when switching countries
   useEffect(() => {
     setQueryPreview("");
     setShowKeywordModal(false);
+    setActiveTab("events");
   }, [selectedCountry]);
+
+  function handleTabClick(tabId) {
+    setActiveTab(tabId);
+    if (tabId === "articles") onOpenArticlesTab();
+  }
 
   function handleApplyKeywordQuery({ expression, queryOptions }) {
     const nextExpression = expression || "";
@@ -120,78 +155,143 @@ export default function NewsSidebar({
         </div>
       </div>
 
-      <SidebarFilterBar
-        sortBy={sortBy}
-        onSortChange={onSortChange}
-        timeRange={timeRange}
-        onTimeRangeChange={onTimeRangeChange}
-        useTopSourcesOnly={useTopSourcesOnly}
-        onTopSourcesToggle={onTopSourcesToggle}
-      />
-
-      {/* Keyword filter (only when country selected) */}
+      {/* Events / Articles tabs (only meaningful once a country is picked) */}
       {selectedCountry && (
-        <SidebarQueryControls
-          queryPreview={queryPreview}
-          includePoliticalKeywords={includePoliticalKeywords}
-          onOpenKeywordBuilder={() => setShowKeywordModal(true)}
-          onPoliticalModeChange={onPoliticalModeChange}
-          onClearQuery={clearKeywordQuery}
-        />
+        <div className="flex border-b border-carbon-700/70 shrink-0">
+          {[
+            { id: "events", label: "Events" },
+            { id: "articles", label: "Articles" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`flex-1 text-[10px] font-mono font-bold uppercase tracking-widest py-2.5 border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "border-signal-cyan text-signal-cyan"
+                  : "border-transparent text-carbon-500 hover:text-carbon-300"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        {loading && (
-          <div>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
+      {activeTab === "events" && selectedCountry ? (
+        <>
+          <EventsFilterBar
+            timeRange={eventsTimeRange}
+            onTimeRangeChange={onEventsTimeRangeChange}
+          />
+          <div className="flex-1 overflow-y-auto">
+            <EventsList
+              events={events}
+              loading={eventsLoading}
+              error={eventsError}
+              onSelectEvent={onSelectEvent}
+            />
           </div>
-        )}
-
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
-            <span className="text-signal-red font-mono text-sm mb-2">
-              ⚠ SIGNAL LOST
-            </span>
-            <p className="text-carbon-500 text-xs font-mono">{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && articles.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
-            <span className="text-carbon-600 font-mono text-xs uppercase tracking-widest">
-              No articles found
-            </span>
-            <p className="text-carbon-600 text-[10px] font-mono mt-2">
-              Try adjusting the time range or keywords
-            </p>
-          </div>
-        )}
-
-        {!loading &&
-          articles.map((article, i) => (
-            <ArticleCard key={article.url || i} article={article} index={i} />
-          ))}
-      </div>
-
-      {/* Footer */}
-      {articles.length > 0 && (
-        <div className="shrink-0 px-4 py-2 border-t border-carbon-700/50 space-y-2">
-          <p className="text-[9px] font-mono text-carbon-600 text-center uppercase tracking-widest">
-            {articles.length} loaded · powered by NewsAPI
-          </p>
-          {canLoadMore && (
-            <button
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              className="w-full text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-3 py-1.5 hover:border-signal-cyan/60 hover:text-signal-cyan transition-colors disabled:opacity-40"
-            >
-              {loadingMore ? "LOADING…" : "SEE MORE"}
-            </button>
+          {events.length > 0 && (
+            <div className="shrink-0 px-4 py-2 border-t border-carbon-700/50 space-y-2">
+              <p className="text-[9px] font-mono text-carbon-600 text-center uppercase tracking-widest">
+                {events.length} events · powered by GDELT
+              </p>
+              {eventsHasMore && (
+                <button
+                  onClick={handleLoadMoreEventsClick}
+                  disabled={eventsLoadingMore || eventsLoadMoreCooldown}
+                  className="w-full text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-3 py-1.5 hover:border-signal-cyan/60 hover:text-signal-cyan transition-colors disabled:opacity-40"
+                >
+                  {eventsLoadingMore
+                    ? "LOADING…"
+                    : eventsLoadMoreCooldown
+                      ? "WAIT A MOMENT…"
+                      : "LOAD MORE"}
+                </button>
+              )}
+            </div>
           )}
-        </div>
+        </>
+      ) : (
+        <>
+          <SidebarFilterBar
+            sortBy={sortBy}
+            onSortChange={onSortChange}
+            timeRange={timeRange}
+            onTimeRangeChange={onTimeRangeChange}
+            useTopSourcesOnly={useTopSourcesOnly}
+            onTopSourcesToggle={onTopSourcesToggle}
+          />
+
+          {/* Keyword filter (only when country selected) */}
+          {selectedCountry && (
+            <SidebarQueryControls
+              queryPreview={queryPreview}
+              includePoliticalKeywords={includePoliticalKeywords}
+              onOpenKeywordBuilder={() => setShowKeywordModal(true)}
+              onPoliticalModeChange={onPoliticalModeChange}
+              onClearQuery={clearKeywordQuery}
+            />
+          )}
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {loading && (
+              <div>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            )}
+
+            {!loading && error && (
+              <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
+                <span className="text-signal-red font-mono text-sm mb-2">
+                  ⚠ SIGNAL LOST
+                </span>
+                <p className="text-carbon-500 text-xs font-mono">{error}</p>
+              </div>
+            )}
+
+            {!loading && !error && articles.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
+                <span className="text-carbon-600 font-mono text-xs uppercase tracking-widest">
+                  No articles found
+                </span>
+                <p className="text-carbon-600 text-[10px] font-mono mt-2">
+                  Try adjusting the time range or keywords
+                </p>
+              </div>
+            )}
+
+            {!loading &&
+              articles.map((article, i) => (
+                <ArticleCard
+                  key={article.url || i}
+                  article={article}
+                  index={i}
+                />
+              ))}
+          </div>
+
+          {/* Footer */}
+          {articles.length > 0 && (
+            <div className="shrink-0 px-4 py-2 border-t border-carbon-700/50 space-y-2">
+              <p className="text-[9px] font-mono text-carbon-600 text-center uppercase tracking-widest">
+                {articles.length} loaded · powered by NewsAPI
+              </p>
+              {canLoadMore && (
+                <button
+                  onClick={onLoadMore}
+                  disabled={loadingMore}
+                  className="w-full text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-3 py-1.5 hover:border-signal-cyan/60 hover:text-signal-cyan transition-colors disabled:opacity-40"
+                >
+                  {loadingMore ? "LOADING…" : "SEE MORE"}
+                </button>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <KeywordQueryModal

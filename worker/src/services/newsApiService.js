@@ -1,5 +1,7 @@
 const NEWS_API_BASE = "https://newsapi.org/v2";
 
+const USER_AGENT = "Sentinel/1.0 (personal news monitor)";
+
 export async function fetchEverything({
   apiKey,
   q,
@@ -22,7 +24,7 @@ export async function fetchEverything({
   if (from) url.searchParams.set("from", from);
 
   const response = await fetch(url.toString(), {
-    headers: { "X-Api-Key": apiKey },
+    headers: { "X-Api-Key": apiKey, "User-Agent": USER_AGENT },
   });
 
   const data = await response.json();
@@ -41,7 +43,7 @@ export async function fetchTopHeadlines({
   url.searchParams.set("pageSize", pageSize);
 
   const response = await fetch(url.toString(), {
-    headers: { "X-Api-Key": apiKey },
+    headers: { "X-Api-Key": apiKey, "User-Agent": USER_AGENT },
   });
 
   const data = await response.json();

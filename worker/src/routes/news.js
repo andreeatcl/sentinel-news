@@ -6,15 +6,37 @@ import {
 import { getCacheKey, getCached, setCached } from "../lib/cache.js";
 import { extractKeys } from "../lib/keys.js";
 import { withKeyFailover } from "../lib/withKeyFailover.js";
+import {
+  buildGdeltDocQuery,
+  fetchGdeltDoc,
+  normalizeGdeltArticle,
+} from "../services/gdeltDocService.js";
+import { mergeArticles } from "../lib/mergeArticles.js";
 
 // NewsAPI offers news with a 24h delay so refetching more than a few times a day will just be useless & burn our daily quota
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 
 const news = new Hono();
 
+// fetches GDELT DOC results for a topic and merges them into NewsAPI's article list
+async function mergeInGdeltDoc(newsApiData, topic, from) {
+  if (!topic) return newsApiData;
+
+  try {
+    const query = buildGdeltDocQuery(topic);
+    const { articles: gdeltRaw } = await fetchGdeltDoc({ query, from });
+    const gdeltArticles = gdeltRaw.map(normalizeGdeltArticle);
+    const merged = mergeArticles(newsApiData.articles || [], gdeltArticles);
+    return { ...newsApiData, articles: merged, totalResults: merged.length };
+  } catch {
+    return newsApiData;
+  }
+}
+
 news.get("/news", async (c) => {
   const {
     q,
+    topic,
     sortBy = "relevancy",
     from,
     language,
@@ -35,7 +57,7 @@ news.get("/news", async (c) => {
     );
   }
 
-  const params = { q, sortBy, from, language, pageSize, page, searchIn };
+  const params = { q, topic, sortBy, from, language, pageSize, page, searchIn };
   const cacheKey = getCacheKey(params);
 
   const cached = await getCached(c.env, cacheKey);
@@ -64,10 +86,12 @@ news.get("/news", async (c) => {
     return c.json({ error: result.error.message }, result.error.status);
   }
 
-  await setCached(c.env, cacheKey, result.data, CACHE_TTL_SECONDS);
+  const mergedData = await mergeInGdeltDoc(result.data, topic, from);
+
+  await setCached(c.env, cacheKey, mergedData, CACHE_TTL_SECONDS);
 
   return c.json({
-    ...result.data,
+    ...mergedData,
     _cached: false,
     _keyUsed: result.keyUsedSlot,
     _apiCallsToday: result.apiCallsToday,
