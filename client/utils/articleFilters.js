@@ -8,6 +8,14 @@ function normalizeSourceValue(value = "") {
     .replace(/[^a-z0-9]/g, "");
 }
 
+function hostnameOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
 const topSourceNameSet = new Set(
   sources.sources.map((source) => normalizeSourceValue(source.name)),
 );
@@ -15,6 +23,9 @@ const topSourceIdSet = new Set(
   sources.sources
     .map((source) => normalizeSourceValue(source.id))
     .filter(Boolean),
+);
+const topSourceDomainSet = new Set(
+  sources.sources.map((source) => hostnameOf(source.url)).filter(Boolean),
 );
 
 // filter out retracted/duplicated articles
@@ -41,9 +52,11 @@ export function filterTopSources(inputArticles) {
   return (inputArticles || []).filter((article) => {
     const sourceId = normalizeSourceValue(article?.source?.id || "");
     const sourceName = normalizeSourceValue(article?.source?.name || "");
+    const hostname = hostnameOf(article?.url || "");
     return (
       (sourceId && topSourceIdSet.has(sourceId)) ||
-      (sourceName && topSourceNameSet.has(sourceName))
+      (sourceName && topSourceNameSet.has(sourceName)) ||
+      (hostname && topSourceDomainSet.has(hostname))
     );
   });
 }

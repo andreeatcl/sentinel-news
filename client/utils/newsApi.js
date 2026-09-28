@@ -1,7 +1,7 @@
 import { getApiKeys, setApiKeys } from "./storage";
 
 const BASE = "/api";
-const REQUEST_TIMEOUT_MS = 25000;
+const REQUEST_TIMEOUT_MS = 30000;
 
 const TIME_RANGE_HOURS = { "48h": 48, "30d": 30 * 24 };
 
@@ -36,12 +36,13 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 export async function fetchNews({
   q,
   topic,
+  extraKeywords,
   sortBy = "relevancy",
   timeRange = "7d",
   language,
   pageSize = 100,
   page = 1,
-  searchIn = "title,description",
+  searchIn = "title,description,content",
 }) {
   const params = new URLSearchParams({ q, sortBy, pageSize, page, searchIn });
   if (language) {
@@ -51,6 +52,9 @@ export async function fetchNews({
   // build a separate GDELT DOC query and merge results
   if (topic) {
     params.set("topic", topic);
+  }
+  if (topic && extraKeywords) {
+    params.set("extraKeywords", extraKeywords);
   }
   params.set("from", buildTimeRangeFilter(timeRange));
 

@@ -2,8 +2,12 @@ import countryKeywords from "../../../temporary/countryKeywords.json";
 
 const GDELT_DOC_BASE = "https://api.gdeltproject.org/api/v2/doc/doc";
 const MAX_KEYWORDS = 12; // keeps the query under GDELT's length limit
+const MAX_EXTRA_KEYWORDS = 8;
 const MAX_RECORDS = 75;
-const FETCH_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 6000;
+const MIN_REQUEST_INTERVAL_MS = 5200;
+
+let lastRequestAt = 0;
 
 function normalizeCountryKey(value = "") {
   return value
@@ -20,7 +24,16 @@ function quotePhrase(term) {
   return clean.includes(" ") ? `"${clean}"` : clean;
 }
 
-export function buildGdeltDocQuery(countryOrTopic) {
+function buildExtraKeywordGroup(extraKeywords = "") {
+  const terms = extraKeywords
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, MAX_EXTRA_KEYWORDS);
+  return terms.map(quotePhrase).filter(Boolean).join(" OR ");
+}
+
+export function buildGdeltDocQuery(countryOrTopic, extraKeywords = "") {
   const normalized = normalizeCountryKey(countryOrTopic);
   const aliases = countryKeywords.aliases || {};
   const resolvedKey = aliases[normalized] || normalized;
@@ -32,15 +45,18 @@ export function buildGdeltDocQuery(countryOrTopic) {
       ? countryKeywords[resolvedKey]
       : [];
 
-  if (keywords.length === 0) return countryPhrase;
-
   const keywordGroup = keywords
     .slice(0, MAX_KEYWORDS)
     .map(quotePhrase)
     .filter(Boolean)
     .join(" OR ");
 
-  return `${countryPhrase} (${keywordGroup})`;
+  const extraGroup = buildExtraKeywordGroup(extraKeywords);
+
+  const parts = [countryPhrase];
+  if (keywordGroup) parts.push(`(${keywordGroup})`);
+  if (extraGroup) parts.push(`(${extraGroup})`);
+  return parts.join(" ");
 }
 
 // GDELT wants a "YYYYMMDDHHMMSS" format
@@ -50,6 +66,16 @@ function isoToGdeltDateTime(iso) {
 }
 
 export async function fetchGdeltDoc({ query, from }) {
+  const now = Date.now();
+  const elapsed = now - lastRequestAt;
+  if (elapsed < MIN_REQUEST_INTERVAL_MS) {
+    console.warn(
+      `GDELT DOC call skipped — only ${elapsed}ms since the last one, under GDELT's own 5s-per-request limit. Falling back to NewsAPI-only for this search.`,
+    );
+    return { articles: [], error: "skipped: under GDELT's 5s rate limit" };
+  }
+  lastRequestAt = now;
+
   const url = new URL(GDELT_DOC_BASE);
   url.searchParams.set("query", query);
   url.searchParams.set("mode", "artlist");
@@ -72,9 +98,21 @@ export async function fetchGdeltDoc({ query, from }) {
   } finally {
     clearTimeout(timeoutId);
   }
-  if (!response.ok) return { articles: [] };
+  if (!response.ok) {
+    const bodyText = await response.text().catch(() => "");
+    const message = `GDELT DOC returned ${response.status} ${response.statusText}${bodyText ? ` — ${bodyText.slice(0, 200)}` : ""}`;
+    console.error(message);
+    return { articles: [], error: message };
+  }
 
-  const data = await response.json().catch(() => ({ articles: [] }));
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    const message = `GDELT DOC response was not valid JSON: ${err.message}`;
+    console.error(message);
+    return { articles: [], error: message };
+  }
   return { articles: data.articles || [] };
 }
 

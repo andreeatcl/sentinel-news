@@ -72,6 +72,7 @@ export function useNews() {
         const data = await fetchNews({
           q,
           topic: raw ? undefined : topic,
+          extraKeywords: raw ? undefined : extraKeywords,
           sortBy,
           timeRange,
           page,

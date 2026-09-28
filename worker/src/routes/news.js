@@ -12,24 +12,74 @@ import {
   normalizeGdeltArticle,
 } from "../services/gdeltDocService.js";
 import { mergeArticles } from "../lib/mergeArticles.js";
+import { rankArticles } from "../lib/rankArticles.js";
+import { fetchPageMetadata } from "../lib/pageMetadata.js";
+import { isLowQualityDomain } from "../lib/lowQualitySources.js";
 
 // NewsAPI offers news with a 24h delay so refetching more than a few times a day will just be useless & burn our daily quota
 const CACHE_TTL_SECONDS = 60 * 60 * 6;
 
+const GDELT_FAILURE_CACHE_TTL_SECONDS = 60 * 5;
+
+const GDELT_BACKFILL_LIMIT = 12;
+
 const news = new Hono();
 
-// fetches GDELT DOC results for a topic and merges them into NewsAPI's article list
-async function mergeInGdeltDoc(newsApiData, topic, from) {
-  if (!topic) return newsApiData;
+async function backfillGdeltDescriptions(env, articles) {
+  const targets = [];
+  for (const article of articles) {
+    if (targets.length >= GDELT_BACKFILL_LIMIT) break;
+    if (article._provider === "gdelt" && !article.description) {
+      targets.push(article);
+    }
+  }
+  if (targets.length === 0) return articles;
+
+  const metaByUrl = new Map();
+  await Promise.all(
+    targets.map(async (article) => {
+      const meta = await fetchPageMetadata(env, article.url);
+      if (meta) metaByUrl.set(article.url, meta);
+    }),
+  );
+  if (metaByUrl.size === 0) return articles;
+
+  return articles.map((article) => {
+    const meta = metaByUrl.get(article.url);
+    if (!meta) return article;
+    return {
+      ...article,
+      title: article.title || meta.title,
+      description: meta.description || article.description,
+      urlToImage: article.urlToImage || meta.image || null,
+    };
+  });
+}
+
+async function fetchGdeltForMerge({ topic, extraKeywords, from, page }) {
+  if (!topic) return { articles: null };
+  if (page !== "1") return { articles: null, skipped: "pagination" };
 
   try {
-    const query = buildGdeltDocQuery(topic);
-    const { articles: gdeltRaw } = await fetchGdeltDoc({ query, from });
-    const gdeltArticles = gdeltRaw.map(normalizeGdeltArticle);
-    const merged = mergeArticles(newsApiData.articles || [], gdeltArticles);
-    return { ...newsApiData, articles: merged, totalResults: merged.length };
-  } catch {
-    return newsApiData;
+    const query = buildGdeltDocQuery(topic, extraKeywords);
+    const { articles: gdeltRaw, error } = await fetchGdeltDoc({ query, from });
+    if (error?.startsWith("skipped:")) {
+      return { articles: null, skipped: "rate-limited" };
+    }
+    if (error) {
+      console.error(
+        `GDELT fetch failed for topic "${topic}" (query: ${query}): ${error}`,
+      );
+      return { articles: null, error };
+    }
+    const filtered = gdeltRaw.filter((a) => !isLowQualityDomain(a.url));
+    return { articles: filtered.map(normalizeGdeltArticle) };
+  } catch (err) {
+    console.error(
+      `GDELT fetch threw for topic "${topic}":`,
+      err?.message || err,
+    );
+    return { articles: null, error: err?.message || "unknown error" };
   }
 }
 
@@ -37,12 +87,13 @@ news.get("/news", async (c) => {
   const {
     q,
     topic,
+    extraKeywords = "",
     sortBy = "relevancy",
     from,
     language,
     pageSize = "100",
     page = "1",
-    searchIn = "title,description",
+    searchIn = "title,description,content",
   } = c.req.query();
 
   if (!q) {
@@ -57,7 +108,17 @@ news.get("/news", async (c) => {
     );
   }
 
-  const params = { q, topic, sortBy, from, language, pageSize, page, searchIn };
+  const params = {
+    q,
+    topic,
+    extraKeywords,
+    sortBy,
+    from,
+    language,
+    pageSize,
+    page,
+    searchIn,
+  };
   const cacheKey = getCacheKey(params);
 
   const cached = await getCached(c.env, cacheKey);
@@ -68,6 +129,8 @@ news.get("/news", async (c) => {
       _cacheAge: Math.round((Date.now() - cached.timestamp) / 1000),
     });
   }
+
+  const gdeltPromise = fetchGdeltForMerge({ topic, extraKeywords, from, page });
 
   const result = await withKeyFailover(c.env, keys, (apiKey) =>
     fetchEverything({
@@ -86,12 +149,39 @@ news.get("/news", async (c) => {
     return c.json({ error: result.error.message }, result.error.status);
   }
 
-  const mergedData = await mergeInGdeltDoc(result.data, topic, from);
+  const gdeltResult = await gdeltPromise;
+  let articles = result.data.articles || [];
+  const gdeltMeta = {};
+  if (gdeltResult.articles) {
+    articles = mergeArticles(articles, gdeltResult.articles);
+  } else if (gdeltResult.error) {
+    gdeltMeta._gdeltError = gdeltResult.error;
+  } else if (gdeltResult.skipped) {
+    gdeltMeta._gdeltSkipped = gdeltResult.skipped;
+  }
 
-  await setCached(c.env, cacheKey, mergedData, CACHE_TTL_SECONDS);
+  const ranked = rankArticles(articles, { sortBy });
+  const backfilled = await backfillGdeltDescriptions(c.env, ranked);
+
+  const finalData = {
+    ...result.data,
+    articles: backfilled,
+    totalResults: backfilled.length,
+    ...gdeltMeta,
+  };
+
+  // i am having issues with this damn api
+  const gdeltFailedOrThrottled =
+    Boolean(gdeltMeta._gdeltError) ||
+    gdeltMeta._gdeltSkipped === "rate-limited";
+  const cacheTtl = gdeltFailedOrThrottled
+    ? GDELT_FAILURE_CACHE_TTL_SECONDS
+    : CACHE_TTL_SECONDS;
+
+  await setCached(c.env, cacheKey, finalData, cacheTtl);
 
   return c.json({
-    ...mergedData,
+    ...finalData,
     _cached: false,
     _keyUsed: result.keyUsedSlot,
     _apiCallsToday: result.apiCallsToday,
