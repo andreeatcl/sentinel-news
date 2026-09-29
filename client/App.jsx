@@ -28,6 +28,7 @@ export default function App() {
     timeRange,
     includePoliticalKeywords,
     useTopSourcesOnly,
+    englishOnly,
     isMobile,
     articles,
     loading,
@@ -53,6 +54,7 @@ export default function App() {
     handleClose,
     handleLoadMore,
     handleTopSourcesToggle,
+    handleEnglishOnlyToggle,
     handleRunSavedSearch,
     getCurrentSearch,
   } = useAppControls();
@@ -158,6 +160,8 @@ export default function App() {
           timeRange={timeRange}
           useTopSourcesOnly={useTopSourcesOnly}
           onTopSourcesToggle={handleTopSourcesToggle}
+          englishOnly={englishOnly}
+          onEnglishOnlyToggle={handleEnglishOnlyToggle}
           onSaveSearch={handleSaveSearch}
           events={events}
           eventsLoading={eventsLoading}

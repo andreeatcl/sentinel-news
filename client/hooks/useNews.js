@@ -4,6 +4,7 @@ import { buildTopicQuery } from "../utils/queryBuilder";
 import {
   sanitizeArticles,
   filterTopSources as filterToTopSources,
+  filterEnglishOnly as filterToEnglishOnly,
 } from "../utils/articleFilters";
 
 export function useNews() {
@@ -23,12 +24,15 @@ export function useNews() {
   const includePoliticalKeywordsRef = useRef(true);
   const queryOptionsRef = useRef({});
   const useTopSourcesOnlyRef = useRef(false);
+  const englishOnlyRef = useRef(false);
   const pageRef = useRef(1);
 
-  // avoid double api call when applying top sources filter
-  function filterTopSources(inputArticles) {
-    if (!useTopSourcesOnlyRef.current) return inputArticles;
-    return filterToTopSources(inputArticles);
+  // avoids a new API call when either toggle changes
+  function applyClientFilters(inputArticles) {
+    let result = inputArticles;
+    if (useTopSourcesOnlyRef.current) result = filterToTopSources(result);
+    if (englishOnlyRef.current) result = filterToEnglishOnly(result);
+    return result;
   }
 
   const search = useCallback(
@@ -41,6 +45,7 @@ export function useNews() {
       includePoliticalKeywords = true,
       queryOptions = {},
       useTopSourcesOnly = false,
+      englishOnly = false,
       page = 1,
       append = false,
     }) => {
@@ -51,6 +56,7 @@ export function useNews() {
       includePoliticalKeywordsRef.current = includePoliticalKeywords;
       queryOptionsRef.current = queryOptions;
       useTopSourcesOnlyRef.current = useTopSourcesOnly;
+      englishOnlyRef.current = englishOnly;
 
       pageRef.current = page;
       const q = raw
@@ -82,7 +88,7 @@ export function useNews() {
           const nextAll = append
             ? sanitizeArticles([...prev, ...nextArticles])
             : nextArticles;
-          setArticles(filterTopSources(nextAll));
+          setArticles(applyClientFilters(nextAll));
           return nextAll;
         });
         setMeta({
@@ -122,6 +128,7 @@ export function useNews() {
         includePoliticalKeywords: includePoliticalKeywordsRef.current,
         queryOptions: queryOptionsRef.current,
         useTopSourcesOnly: useTopSourcesOnlyRef.current,
+        englishOnly: englishOnlyRef.current,
         page: 1,
         append: false,
       });
@@ -142,6 +149,7 @@ export function useNews() {
         includePoliticalKeywords: includePoliticalKeywordsRef.current,
         queryOptions: queryOptionsRef.current,
         useTopSourcesOnly: useTopSourcesOnlyRef.current,
+        englishOnly: englishOnlyRef.current,
         page: nextPage,
         append: true,
       });
@@ -161,13 +169,22 @@ export function useNews() {
     includePoliticalKeywordsRef.current = true;
     queryOptionsRef.current = {};
     useTopSourcesOnlyRef.current = false;
+    englishOnlyRef.current = false;
     pageRef.current = 1;
   }, []);
 
   const setTopSourcesOnly = useCallback(
     (enabled) => {
       useTopSourcesOnlyRef.current = enabled;
-      setArticles(enabled ? filterTopSources(allArticles) : allArticles);
+      setArticles(applyClientFilters(allArticles));
+    },
+    [allArticles],
+  );
+
+  const setEnglishOnly = useCallback(
+    (enabled) => {
+      englishOnlyRef.current = enabled;
+      setArticles(applyClientFilters(allArticles));
     },
     [allArticles],
   );
@@ -188,6 +205,7 @@ export function useNews() {
     resort,
     loadMore,
     setTopSourcesOnly,
+    setEnglishOnly,
     clear,
   };
 }

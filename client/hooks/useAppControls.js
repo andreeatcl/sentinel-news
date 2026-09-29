@@ -12,6 +12,7 @@ export function useAppControls() {
   const [includePoliticalKeywords, setIncludePoliticalKeywords] =
     useState(true);
   const [useTopSourcesOnly, setUseTopSourcesOnly] = useState(false);
+  const [englishOnly, setEnglishOnlyState] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined"
       ? window.innerWidth < MOBILE_BREAKPOINT
@@ -48,6 +49,7 @@ export function useAppControls() {
     search,
     loadMore,
     setTopSourcesOnly: applyTopSourcesFilter,
+    setEnglishOnly: applyEnglishOnlyFilter,
     clear,
   } = useNews();
 
@@ -93,11 +95,19 @@ export function useAppControls() {
         timeRange: timeRangeOverride,
         includePoliticalKeywords: political,
         useTopSourcesOnly,
+        englishOnly,
         page: 1,
         append: false,
       });
     },
-    [search, sortBy, timeRange, includePoliticalKeywords, useTopSourcesOnly],
+    [
+      search,
+      sortBy,
+      timeRange,
+      includePoliticalKeywords,
+      useTopSourcesOnly,
+      englishOnly,
+    ],
   );
 
   const handleCountryClick = useCallback(
@@ -188,6 +198,12 @@ export function useAppControls() {
     applyTopSourcesFilter(newState);
   }, [useTopSourcesOnly, applyTopSourcesFilter]);
 
+  const handleEnglishOnlyToggle = useCallback(() => {
+    const newState = !englishOnly;
+    setEnglishOnlyState(newState);
+    applyEnglishOnlyFilter(newState);
+  }, [englishOnly, applyEnglishOnlyFilter]);
+
   // re-run a search saved earlier (see SavedSearchesPanel.jsx)
   const handleRunSavedSearch = useCallback(
     ({ topic, extraKeywords, queryOptions }) => {
@@ -211,6 +227,7 @@ export function useAppControls() {
     timeRange,
     includePoliticalKeywords,
     useTopSourcesOnly,
+    englishOnly,
     isMobile,
     articles,
     loading,
@@ -236,6 +253,7 @@ export function useAppControls() {
     handleClose,
     handleLoadMore,
     handleTopSourcesToggle,
+    handleEnglishOnlyToggle,
     handleRunSavedSearch,
     getCurrentSearch,
   };

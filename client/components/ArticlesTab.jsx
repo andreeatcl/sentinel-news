@@ -29,6 +29,8 @@ export default function ArticlesTab({
   onApplyArticleFilters,
   useTopSourcesOnly,
   onTopSourcesToggle,
+  englishOnly,
+  onEnglishOnlyToggle,
   onExtraSearch,
   onLoadMore,
   onSelectArticle,
@@ -108,10 +110,13 @@ export default function ArticlesTab({
         {/* client-side only, no request — stays live */}
         <AccordionSection
           title="Sources"
-          activeCount={useTopSourcesOnly ? 1 : 0}
+          activeCount={(useTopSourcesOnly ? 1 : 0) + (englishOnly ? 1 : 0)}
         >
           <Pill active={useTopSourcesOnly} onClick={onTopSourcesToggle}>
             Top sources only
+          </Pill>
+          <Pill active={englishOnly} onClick={onEnglishOnlyToggle}>
+            English only
           </Pill>
         </AccordionSection>
 

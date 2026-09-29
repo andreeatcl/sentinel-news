@@ -60,3 +60,11 @@ export function filterTopSources(inputArticles) {
     );
   });
 }
+
+// only GDELT articles carry a language
+export function filterEnglishOnly(inputArticles) {
+  return (inputArticles || []).filter((article) => {
+    const language = article?.language;
+    return !language || language.toLowerCase().includes("english");
+  });
+}

@@ -22,6 +22,8 @@ export default function MonitorPanel({
   timeRange,
   useTopSourcesOnly,
   onTopSourcesToggle,
+  englishOnly,
+  onEnglishOnlyToggle,
   onSaveSearch,
   events,
   eventsLoading,
@@ -95,6 +97,8 @@ export default function MonitorPanel({
           onApplyArticleFilters={onApplyArticleFilters}
           useTopSourcesOnly={useTopSourcesOnly}
           onTopSourcesToggle={onTopSourcesToggle}
+          englishOnly={englishOnly}
+          onEnglishOnlyToggle={onEnglishOnlyToggle}
           onExtraSearch={onExtraSearch}
           onLoadMore={onLoadMore}
           onSelectArticle={onSelectArticle}
