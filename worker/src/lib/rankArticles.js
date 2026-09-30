@@ -1,9 +1,7 @@
-import sources from "../../../client/utils/sources.json";
+import { getSourceTrustLabel } from "./sourceTrust.js";
 
 const RECENCY_HALF_LIFE_HOURS = 36;
 const RECENCY_FLOOR = 0.05;
-
-const TRUST_MULTIPLIER = 1.3;
 
 const PROVIDER_MULTIPLIER = { newsapi: 1.25, gdelt: 1 };
 
@@ -171,38 +169,6 @@ const GEO_NO_MATCH_PENALTY = 0.85;
 
 const CORROBORATION_WEIGHT = 0.12;
 
-function normalizeSourceValue(value = "") {
-  return value
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-}
-
-function hostnameOf(url) {
-  try {
-    return new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
-const trustedNames = new Set(
-  sources.sources.map((s) => normalizeSourceValue(s.name)),
-);
-const trustedDomains = new Set(
-  sources.sources.map((s) => hostnameOf(s.url)).filter(Boolean),
-);
-
-// works for both NewsAPI articles (name-based) and GDELT articles, which
-// only carry a raw domain, not a display name
-function isTrustedSource(article) {
-  const name = normalizeSourceValue(article?.source?.name || "");
-  if (name && trustedNames.has(name)) return true;
-  const hostname = hostnameOf(article?.url || "");
-  return !!hostname && trustedDomains.has(hostname);
-}
-
 function recencyScore(publishedAt) {
   const time = publishedAt ? Date.parse(publishedAt) : NaN;
   if (Number.isNaN(time)) return RECENCY_FLOOR;
@@ -236,10 +202,10 @@ function languageMultiplier(article) {
   return language.toLowerCase().includes("english") ? 1 : NON_ENGLISH_PENALTY;
 }
 
+// to add source credibility multiplier!!
 function relevanceScore(article) {
   return (
     recencyScore(article.publishedAt) *
-    (isTrustedSource(article) ? TRUST_MULTIPLIER : 1) *
     providerMultiplier(article) *
     languageMultiplier(article) *
     geoRelevanceMultiplier(article) *
@@ -250,7 +216,6 @@ function relevanceScore(article) {
 function popularityScore(article) {
   return (
     corroborationMultiplier(article) *
-    (isTrustedSource(article) ? TRUST_MULTIPLIER : 1) *
     providerMultiplier(article) *
     languageMultiplier(article) *
     (0.5 + 0.5 * recencyScore(article.publishedAt))
@@ -268,9 +233,14 @@ const SCORERS = {
 };
 
 export function rankArticles(articles, { sortBy = "relevancy" } = {}) {
-  const list = articles || [];
+  // _trustLabel is null right now - to do
+  const list = (articles || []).map((article) => ({
+    ...article,
+    _trustLabel: getSourceTrustLabel(article),
+  }));
+
   if (sortBy === "date") {
-    return [...list].sort((a, b) => dateValue(b) - dateValue(a));
+    return list.sort((a, b) => dateValue(b) - dateValue(a));
   }
   const scorer = SCORERS[sortBy] || SCORERS.relevancy;
   return list

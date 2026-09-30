@@ -87,7 +87,21 @@ export default function ArticleDetail({ article, onClose }) {
 
         {/* Source / author */}
         <div className="grid grid-cols-2 gap-4 px-5 py-4 border-b border-carbon-700/50">
-          <InfoRow label="Source" value={sourceName} />
+          <InfoRow
+            label="Source"
+            value={
+              <>
+                {sourceName}
+                {/* trust label display goes here */}
+                {article._duplicateCount > 1 && (
+                  <span className="text-carbon-500 font-mono font-normal text-xs">
+                    {" "}
+                    · {article._duplicateCount} sources
+                  </span>
+                )}
+              </>
+            }
+          />
           <InfoRow
             label="Published"
             value={timeAgo(article.publishedAt) || "Unknown"}

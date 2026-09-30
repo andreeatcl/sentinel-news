@@ -31,7 +31,10 @@ export default function ArticleCard({ article, index, onClick }) {
           <span className="flex items-center gap-1.5 min-w-0 max-w-[75%]">
             <span className="text-[10px] font-mono font-bold text-signal-cyan uppercase tracking-wider truncate">
               {article.source?.name || domain}
+              {article._duplicateCount > 1 &&
+                ` · ${article._duplicateCount} sources`}
             </span>
+            {/* trust label display goes here */}
             {article._provider === "gdelt" && (
               <span className="text-[8px] font-mono font-bold text-signal-amber border border-signal-amber/40 bg-signal-amber/10 rounded px-1 py-0.5 uppercase tracking-wider shrink-0">
                 GDELT
