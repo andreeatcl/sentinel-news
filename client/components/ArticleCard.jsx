@@ -1,6 +1,7 @@
 import { timeAgo } from "../utils/newsApi";
 import { getDomain } from "../utils/url";
 import FavoriteButton from "./FavoriteButton";
+import TrustBadge from "./TrustBadge";
 
 export function SkeletonCard() {
   return (
@@ -34,7 +35,7 @@ export default function ArticleCard({ article, index, onClick }) {
               {article._duplicateCount > 1 &&
                 ` · ${article._duplicateCount} sources`}
             </span>
-            {/* trust label display goes here */}
+            <TrustBadge trust={article._trustLabel} />
             {article._provider === "gdelt" && (
               <span className="text-[8px] font-mono font-bold text-signal-amber border border-signal-amber/40 bg-signal-amber/10 rounded px-1 py-0.5 uppercase tracking-wider shrink-0">
                 GDELT

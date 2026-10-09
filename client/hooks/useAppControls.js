@@ -13,6 +13,7 @@ export function useAppControls() {
     useState(true);
   const [useTopSourcesOnly, setUseTopSourcesOnly] = useState(false);
   const [englishOnly, setEnglishOnlyState] = useState(false);
+  const [stateMediaPriority, setStateMediaPriorityState] = useState(false);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined"
       ? window.innerWidth < MOBILE_BREAKPOINT
@@ -50,6 +51,7 @@ export function useAppControls() {
     loadMore,
     setTopSourcesOnly: applyTopSourcesFilter,
     setEnglishOnly: applyEnglishOnlyFilter,
+    setStateMediaPriority: applyStateMediaPriorityFilter,
     clear,
   } = useNews();
 
@@ -96,6 +98,7 @@ export function useAppControls() {
         includePoliticalKeywords: political,
         useTopSourcesOnly,
         englishOnly,
+        stateMediaPriority,
         page: 1,
         append: false,
       });
@@ -107,6 +110,7 @@ export function useAppControls() {
       includePoliticalKeywords,
       useTopSourcesOnly,
       englishOnly,
+      stateMediaPriority,
     ],
   );
 
@@ -204,6 +208,12 @@ export function useAppControls() {
     applyEnglishOnlyFilter(newState);
   }, [englishOnly, applyEnglishOnlyFilter]);
 
+  const handleStateMediaPriorityToggle = useCallback(() => {
+    const newState = !stateMediaPriority;
+    setStateMediaPriorityState(newState);
+    applyStateMediaPriorityFilter(newState);
+  }, [stateMediaPriority, applyStateMediaPriorityFilter]);
+
   // re-run a search saved earlier (see SavedSearchesPanel.jsx)
   const handleRunSavedSearch = useCallback(
     ({ topic, extraKeywords, queryOptions }) => {
@@ -228,6 +238,7 @@ export function useAppControls() {
     includePoliticalKeywords,
     useTopSourcesOnly,
     englishOnly,
+    stateMediaPriority,
     isMobile,
     articles,
     loading,
@@ -254,6 +265,7 @@ export function useAppControls() {
     handleLoadMore,
     handleTopSourcesToggle,
     handleEnglishOnlyToggle,
+    handleStateMediaPriorityToggle,
     handleRunSavedSearch,
     getCurrentSearch,
   };

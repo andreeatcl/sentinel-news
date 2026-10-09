@@ -33,6 +33,7 @@ function filtersEqual(a, b) {
     a.timeRange === b.timeRange &&
     a.sortBy === b.sortBy &&
     a.sortDir === b.sortDir &&
+    a.stateMediaPriority === b.stateMediaPriority &&
     sameSet(a.category, b.category) &&
     sameSet(a.tone, b.tone)
   );
@@ -170,6 +171,23 @@ export default function EventsTab({
               {label}
             </Pill>
           ))}
+        </AccordionSection>
+
+        <AccordionSection
+          title="Source"
+          activeCount={draftFilters.stateMediaPriority ? 1 : 0}
+        >
+          <Pill
+            active={draftFilters.stateMediaPriority}
+            onClick={() =>
+              setDraftFilters((f) => ({
+                ...f,
+                stateMediaPriority: !f.stateMediaPriority,
+              }))
+            }
+          >
+            Prioritize state media
+          </Pill>
         </AccordionSection>
 
         {/* Client-side only (filters what's already loaded) — instant,

@@ -29,6 +29,7 @@ export default function App() {
     includePoliticalKeywords,
     useTopSourcesOnly,
     englishOnly,
+    stateMediaPriority,
     isMobile,
     articles,
     loading,
@@ -55,6 +56,7 @@ export default function App() {
     handleLoadMore,
     handleTopSourcesToggle,
     handleEnglishOnlyToggle,
+    handleStateMediaPriorityToggle,
     handleRunSavedSearch,
     getCurrentSearch,
   } = useAppControls();
@@ -162,6 +164,8 @@ export default function App() {
           onTopSourcesToggle={handleTopSourcesToggle}
           englishOnly={englishOnly}
           onEnglishOnlyToggle={handleEnglishOnlyToggle}
+          stateMediaPriority={stateMediaPriority}
+          onStateMediaPriorityToggle={handleStateMediaPriorityToggle}
           onSaveSearch={handleSaveSearch}
           events={events}
           eventsLoading={eventsLoading}

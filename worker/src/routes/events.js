@@ -6,6 +6,7 @@ import { getEventsForRange } from "../lib/eventsStore.js";
 import { ingestLatestEventsFile } from "../services/gdeltEventsService.js";
 import { fetchPageMetadata } from "../lib/pageMetadata.js";
 import { isLowQualityDomain } from "../lib/lowQualitySources.js";
+import { getSourceTrustLabel, trustMultiplier } from "../lib/sourceTrust.js";
 
 const MAX_RANGE_DAYS = 30;
 const DEFAULT_LIMIT = 20;
@@ -42,7 +43,12 @@ function significanceScore(row) {
   const quadWeight = QUAD_CLASS_WEIGHT[row.quadClass] || 0.5;
   const toneMagnitude = Math.abs(row.goldstein) || 0;
   const mentionSignal = Math.log(1 + Math.max(0, row.numMentions));
-  return quadWeight * (1 + toneMagnitude) * (1 + mentionSignal);
+  return (
+    quadWeight *
+    (1 + toneMagnitude) *
+    (1 + mentionSignal) *
+    trustMultiplier(row._trustLabel)
+  );
 }
 
 function toneCategoryForRow(goldstein) {
@@ -86,6 +92,7 @@ events.get("/events", async (c) => {
     tone = "",
     sortBy = "significance",
     sortDir = "desc",
+    stateMediaPriority = "false",
   } = c.req.query();
 
   if (!country) {
@@ -123,9 +130,12 @@ events.get("/events", async (c) => {
   const rawRows = await getEventsForRange(c.env, fipsCodes, fromDay, toDay);
   let rows = dedupeBySourceUrl(rawRows);
 
-  rows = rows.filter(
-    (row) => hasStateActor(row) && !isLowQualityDomain(row.sourceUrl),
-  );
+  rows = rows
+    .filter((row) => hasStateActor(row) && !isLowQualityDomain(row.sourceUrl))
+    .map((row) => ({
+      ...row,
+      _trustLabel: getSourceTrustLabel({ url: row.sourceUrl }),
+    }));
 
   const categories = category ? category.split(",").filter(Boolean) : [];
   const tones = tone ? tone.split(",").filter(Boolean) : [];
@@ -138,8 +148,18 @@ events.get("/events", async (c) => {
     );
   }
 
-  const rankedAll = [...rows].sort(SORTERS[sortBy] || SORTERS.significance);
+  let rankedAll = [...rows].sort(SORTERS[sortBy] || SORTERS.significance);
   if (sortDir === "asc") rankedAll.reverse();
+
+  if (stateMediaPriority === "true") {
+    const stateMedia = rankedAll.filter(
+      (row) => row._trustLabel?.tier === "state-affiliated",
+    );
+    const rest = rankedAll.filter(
+      (row) => row._trustLabel?.tier !== "state-affiliated",
+    );
+    rankedAll = [...stateMedia, ...rest];
+  }
 
   const offsetNum = Number(offset);
   const limitNum = Number(limit);

@@ -30,6 +30,7 @@ export async function fetchEvents({
   tone = [],
   sortBy = "significance",
   sortDir = "desc",
+  stateMediaPriority = false,
 }) {
   const days = EVENTS_RANGE_DAYS[timeRange] ?? 7;
   const to = toDateOnly(new Date());
@@ -45,6 +46,7 @@ export async function fetchEvents({
   });
   if (category.length) params.set("category", category.join(","));
   if (tone.length) params.set("tone", tone.join(","));
+  if (stateMediaPriority) params.set("stateMediaPriority", "true");
   const res = await fetchWithTimeout(
     `${BASE}/events?${params}`,
     REQUEST_TIMEOUT_MS,

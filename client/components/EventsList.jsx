@@ -1,5 +1,6 @@
 import { SkeletonCard } from "./ArticleCard";
 import FavoriteButton from "./FavoriteButton";
+import TrustBadge from "./TrustBadge";
 import { toneCategory } from "../utils/eventTone";
 import {
   validActorLabel,
@@ -55,9 +56,12 @@ function EventRow({ event, onClick }) {
         {/* Source + time */}
         <div className="flex items-center justify-between pl-4 mb-1">
           {domain && (
-            <span className="text-[9px] font-mono text-carbon-500 truncate max-w-[60%]">
-              {domain}
-              {event.numSources > 1 && ` · ${event.numSources} sources`}
+            <span className="flex items-center gap-1.5 min-w-0 max-w-[60%]">
+              <span className="text-[9px] font-mono text-carbon-500 truncate">
+                {domain}
+                {event.numSources > 1 && ` · ${event.numSources} sources`}
+              </span>
+              <TrustBadge trust={event._trustLabel} />
             </span>
           )}
           <span className="text-[9px] font-mono text-carbon-500 shrink-0 uppercase tracking-wider ml-auto">

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { timeAgo } from "../utils/newsApi";
 import { getDomain } from "../utils/url";
 import FavoriteButton from "./FavoriteButton";
+import TrustBadge from "./TrustBadge";
 
 function InfoRow({ label, value }) {
   return (
@@ -91,8 +92,7 @@ export default function ArticleDetail({ article, onClose }) {
             label="Source"
             value={
               <>
-                {sourceName}
-                {/* trust label display goes here */}
+                {sourceName} <TrustBadge trust={article._trustLabel} detailed />
                 {article._duplicateCount > 1 && (
                   <span className="text-carbon-500 font-mono font-normal text-xs">
                     {" "}

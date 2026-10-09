@@ -1,4 +1,4 @@
-import sourceTrustLabels from "../../../client/utils/sourceTrustLabels.json";
+import sourceTrustLabels from "../../../temporary/sourceTrustLabels.json";
 
 function hostnameOf(url) {
   try {
@@ -12,4 +12,14 @@ export function getSourceTrustLabel(article) {
   const hostname = hostnameOf(article?.url || "");
   if (!hostname) return null;
   return sourceTrustLabels.domains[hostname] || null;
+}
+
+const TRUST_MULTIPLIER = {
+  trusted: 1.15,
+  "state-affiliated": 0.65,
+  unreliable: 0.75,
+};
+
+export function trustMultiplier(trustLabel) {
+  return TRUST_MULTIPLIER[trustLabel?.tier] ?? 1;
 }

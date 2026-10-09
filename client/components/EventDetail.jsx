@@ -7,6 +7,7 @@ import {
   getDomain,
 } from "../utils/eventDisplay";
 import FavoriteButton from "./FavoriteButton";
+import TrustBadge from "./TrustBadge";
 
 function ActorRow({ label, value }) {
   return (
@@ -157,7 +158,7 @@ export default function EventDetail({ event, onClose }) {
             </a>
             {domain && (
               <p className="text-[10px] font-mono text-carbon-500 mt-2">
-                {domain}
+                {domain} <TrustBadge trust={event._trustLabel} detailed />
               </p>
             )}
           </div>

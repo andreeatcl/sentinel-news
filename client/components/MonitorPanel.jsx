@@ -24,6 +24,8 @@ export default function MonitorPanel({
   onTopSourcesToggle,
   englishOnly,
   onEnglishOnlyToggle,
+  stateMediaPriority,
+  onStateMediaPriorityToggle,
   onSaveSearch,
   events,
   eventsLoading,
@@ -99,6 +101,8 @@ export default function MonitorPanel({
           onTopSourcesToggle={onTopSourcesToggle}
           englishOnly={englishOnly}
           onEnglishOnlyToggle={onEnglishOnlyToggle}
+          stateMediaPriority={stateMediaPriority}
+          onStateMediaPriorityToggle={onStateMediaPriorityToggle}
           onExtraSearch={onExtraSearch}
           onLoadMore={onLoadMore}
           onSelectArticle={onSelectArticle}

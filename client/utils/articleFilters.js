@@ -68,3 +68,13 @@ export function filterEnglishOnly(inputArticles) {
     return !language || language.toLowerCase().includes("english");
   });
 }
+
+// articles from state-affiliated outlets go to the top of the list
+export function prioritizeStateMedia(inputArticles) {
+  const list = inputArticles || [];
+  const stateMedia = list.filter(
+    (a) => a?._trustLabel?.tier === "state-affiliated",
+  );
+  const rest = list.filter((a) => a?._trustLabel?.tier !== "state-affiliated");
+  return [...stateMedia, ...rest];
+}

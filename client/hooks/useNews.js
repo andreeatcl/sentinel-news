@@ -5,6 +5,7 @@ import {
   sanitizeArticles,
   filterTopSources as filterToTopSources,
   filterEnglishOnly as filterToEnglishOnly,
+  prioritizeStateMedia as prioritizeToStateMedia,
 } from "../utils/articleFilters";
 
 export function useNews() {
@@ -25,13 +26,15 @@ export function useNews() {
   const queryOptionsRef = useRef({});
   const useTopSourcesOnlyRef = useRef(false);
   const englishOnlyRef = useRef(false);
+  const stateMediaPriorityRef = useRef(false);
   const pageRef = useRef(1);
 
-  // avoids a new API call when either toggle changes
+  // avoids a new API call when any toggle changes
   function applyClientFilters(inputArticles) {
     let result = inputArticles;
     if (useTopSourcesOnlyRef.current) result = filterToTopSources(result);
     if (englishOnlyRef.current) result = filterToEnglishOnly(result);
+    if (stateMediaPriorityRef.current) result = prioritizeToStateMedia(result);
     return result;
   }
 
@@ -46,6 +49,7 @@ export function useNews() {
       queryOptions = {},
       useTopSourcesOnly = false,
       englishOnly = false,
+      stateMediaPriority = false,
       page = 1,
       append = false,
     }) => {
@@ -57,6 +61,7 @@ export function useNews() {
       queryOptionsRef.current = queryOptions;
       useTopSourcesOnlyRef.current = useTopSourcesOnly;
       englishOnlyRef.current = englishOnly;
+      stateMediaPriorityRef.current = stateMediaPriority;
 
       pageRef.current = page;
       const q = raw
@@ -129,6 +134,7 @@ export function useNews() {
         queryOptions: queryOptionsRef.current,
         useTopSourcesOnly: useTopSourcesOnlyRef.current,
         englishOnly: englishOnlyRef.current,
+        stateMediaPriority: stateMediaPriorityRef.current,
         page: 1,
         append: false,
       });
@@ -150,6 +156,7 @@ export function useNews() {
         queryOptions: queryOptionsRef.current,
         useTopSourcesOnly: useTopSourcesOnlyRef.current,
         englishOnly: englishOnlyRef.current,
+        stateMediaPriority: stateMediaPriorityRef.current,
         page: nextPage,
         append: true,
       });
@@ -170,6 +177,7 @@ export function useNews() {
     queryOptionsRef.current = {};
     useTopSourcesOnlyRef.current = false;
     englishOnlyRef.current = false;
+    stateMediaPriorityRef.current = false;
     pageRef.current = 1;
   }, []);
 
@@ -184,6 +192,14 @@ export function useNews() {
   const setEnglishOnly = useCallback(
     (enabled) => {
       englishOnlyRef.current = enabled;
+      setArticles(applyClientFilters(allArticles));
+    },
+    [allArticles],
+  );
+
+  const setStateMediaPriority = useCallback(
+    (enabled) => {
+      stateMediaPriorityRef.current = enabled;
       setArticles(applyClientFilters(allArticles));
     },
     [allArticles],
@@ -206,6 +222,7 @@ export function useNews() {
     loadMore,
     setTopSourcesOnly,
     setEnglishOnly,
+    setStateMediaPriority,
     clear,
   };
 }

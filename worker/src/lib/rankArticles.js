@@ -1,4 +1,4 @@
-import { getSourceTrustLabel } from "./sourceTrust.js";
+import { getSourceTrustLabel, trustMultiplier } from "./sourceTrust.js";
 
 const RECENCY_HALF_LIFE_HOURS = 36;
 const RECENCY_FLOOR = 0.05;
@@ -202,14 +202,14 @@ function languageMultiplier(article) {
   return language.toLowerCase().includes("english") ? 1 : NON_ENGLISH_PENALTY;
 }
 
-// to add source credibility multiplier!!
 function relevanceScore(article) {
   return (
     recencyScore(article.publishedAt) *
     providerMultiplier(article) *
     languageMultiplier(article) *
     geoRelevanceMultiplier(article) *
-    corroborationMultiplier(article)
+    corroborationMultiplier(article) *
+    trustMultiplier(article._trustLabel)
   );
 }
 
@@ -218,6 +218,7 @@ function popularityScore(article) {
     corroborationMultiplier(article) *
     providerMultiplier(article) *
     languageMultiplier(article) *
+    trustMultiplier(article._trustLabel) *
     (0.5 + 0.5 * recencyScore(article.publishedAt))
   );
 }
@@ -233,7 +234,6 @@ const SCORERS = {
 };
 
 export function rankArticles(articles, { sortBy = "relevancy" } = {}) {
-  // _trustLabel is null right now - to do
   const list = (articles || []).map((article) => ({
     ...article,
     _trustLabel: getSourceTrustLabel(article),
