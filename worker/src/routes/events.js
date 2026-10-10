@@ -92,7 +92,7 @@ events.get("/events", async (c) => {
     tone = "",
     sortBy = "significance",
     sortDir = "desc",
-    stateMediaPriority = "false",
+    sourcePriority = "",
   } = c.req.query();
 
   if (!country) {
@@ -151,14 +151,14 @@ events.get("/events", async (c) => {
   let rankedAll = [...rows].sort(SORTERS[sortBy] || SORTERS.significance);
   if (sortDir === "asc") rankedAll.reverse();
 
-  if (stateMediaPriority === "true") {
-    const stateMedia = rankedAll.filter(
-      (row) => row._trustLabel?.tier === "state-affiliated",
+  if (sourcePriority) {
+    const matching = rankedAll.filter(
+      (row) => row._trustLabel?.tier === sourcePriority,
     );
     const rest = rankedAll.filter(
-      (row) => row._trustLabel?.tier !== "state-affiliated",
+      (row) => row._trustLabel?.tier !== sourcePriority,
     );
-    rankedAll = [...stateMedia, ...rest];
+    rankedAll = [...matching, ...rest];
   }
 
   const offsetNum = Number(offset);

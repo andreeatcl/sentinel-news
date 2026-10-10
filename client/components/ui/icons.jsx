@@ -161,6 +161,22 @@ export function RadarIcon({ className = "w-5 h-5" }) {
   );
 }
 
+export function FolderIcon({ filled = false, ...props }) {
+  return (
+    <Icon {...props} fill={filled ? "currentColor" : "none"}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
+    </Icon>
+  );
+}
+
+export function PlusIcon(props) {
+  return (
+    <Icon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Icon>
+  );
+}
+
 export function CheckIcon(props) {
   return (
     <Icon {...props}>

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { timeAgo } from "../utils/newsApi";
-import { getDomain } from "../utils/url";
-import FavoriteButton from "./FavoriteButton";
-import TrustBadge from "./TrustBadge";
-import { DetailSection, SourceLinkFooter } from "./EventDetail";
-import Modal from "./ui/Modal";
-import { Eyebrow } from "./ui/Field";
+import { timeAgo, formatDate } from "../../utils/newsApi";
+import { getDomain } from "../../utils/url";
+import { favoriteFromArticle } from "../../utils/favorites";
+import FavoriteButton from "../favorites/FavoriteButton";
+import TrustBadge from "../TrustBadge";
+import { DetailSection, SourceLinkFooter } from "../events/EventDetail";
+import Modal from "../ui/Modal";
+import { Eyebrow } from "../ui/Field";
 
 export default function ArticleDetail({ article, onClose }) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -33,7 +34,7 @@ export default function ArticleDetail({ article, onClose }) {
           <span>{sourceName}</span>
         </>
       }
-      headerActions={<FavoriteButton article={article} />}
+      headerActions={<FavoriteButton favorite={favoriteFromArticle(article)} />}
     >
       {/* Image, when the article has one */}
       {article.urlToImage && !imageFailed && (
@@ -72,8 +73,13 @@ export default function ArticleDetail({ article, onClose }) {
         <div>
           <Eyebrow className="mb-1.5">Published</Eyebrow>
           <p className="text-sm text-white">
-            {timeAgo(article.publishedAt) || "Unknown"}
+            {formatDate(article.publishedAt, { withYear: true }) || "Unknown"}
           </p>
+          {article.publishedAt && (
+            <p className="text-xs text-carbon-500 mt-0.5">
+              {timeAgo(article.publishedAt)}
+            </p>
+          )}
         </div>
       </div>
 

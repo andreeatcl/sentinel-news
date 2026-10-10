@@ -102,6 +102,20 @@ export async function testApiKey(key) {
   }
 }
 
+export function formatDate(dateStr, { withYear = false } = {}) {
+  if (!dateStr) return "";
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+    ? new Date(`${dateStr}T00:00:00`)
+    : new Date(dateStr);
+  if (Number.isNaN(date.getTime())) return "";
+  const showYear = withYear || date.getFullYear() !== new Date().getFullYear();
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    ...(showYear && { year: "numeric" }),
+  });
+}
+
 export function timeAgo(dateStr) {
   if (!dateStr) return "";
   const diff = Date.now() - new Date(dateStr).getTime();

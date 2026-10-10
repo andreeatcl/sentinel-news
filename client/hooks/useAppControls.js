@@ -13,7 +13,7 @@ export function useAppControls() {
     useState(true);
   const [useTopSourcesOnly, setUseTopSourcesOnly] = useState(false);
   const [englishOnly, setEnglishOnlyState] = useState(false);
-  const [stateMediaPriority, setStateMediaPriorityState] = useState(false);
+  const [sourcePriority, setSourcePriorityState] = useState(null);
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined"
       ? window.innerWidth < MOBILE_BREAKPOINT
@@ -51,7 +51,7 @@ export function useAppControls() {
     loadMore,
     setTopSourcesOnly: applyTopSourcesFilter,
     setEnglishOnly: applyEnglishOnlyFilter,
-    setStateMediaPriority: applyStateMediaPriorityFilter,
+    setSourcePriority: applySourcePriorityFilter,
     clear,
   } = useNews();
 
@@ -98,7 +98,7 @@ export function useAppControls() {
         includePoliticalKeywords: political,
         useTopSourcesOnly,
         englishOnly,
-        stateMediaPriority,
+        sourcePriority,
         page: 1,
         append: false,
       });
@@ -110,7 +110,7 @@ export function useAppControls() {
       includePoliticalKeywords,
       useTopSourcesOnly,
       englishOnly,
-      stateMediaPriority,
+      sourcePriority,
     ],
   );
 
@@ -208,11 +208,14 @@ export function useAppControls() {
     applyEnglishOnlyFilter(newState);
   }, [englishOnly, applyEnglishOnlyFilter]);
 
-  const handleStateMediaPriorityToggle = useCallback(() => {
-    const newState = !stateMediaPriority;
-    setStateMediaPriorityState(newState);
-    applyStateMediaPriorityFilter(newState);
-  }, [stateMediaPriority, applyStateMediaPriorityFilter]);
+  const handleSourcePriorityToggle = useCallback(
+    (tier) => {
+      const newState = sourcePriority === tier ? null : tier;
+      setSourcePriorityState(newState);
+      applySourcePriorityFilter(newState);
+    },
+    [sourcePriority, applySourcePriorityFilter],
+  );
 
   // re-run a search saved earlier (see SavedSearchesPanel.jsx)
   const handleRunSavedSearch = useCallback(
@@ -238,7 +241,7 @@ export function useAppControls() {
     includePoliticalKeywords,
     useTopSourcesOnly,
     englishOnly,
-    stateMediaPriority,
+    sourcePriority,
     isMobile,
     articles,
     loading,
@@ -265,7 +268,7 @@ export function useAppControls() {
     handleLoadMore,
     handleTopSourcesToggle,
     handleEnglishOnlyToggle,
-    handleStateMediaPriorityToggle,
+    handleSourcePriorityToggle,
     handleRunSavedSearch,
     getCurrentSearch,
   };

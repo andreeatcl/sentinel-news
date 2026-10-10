@@ -1,6 +1,6 @@
-import Button from "./ui/Button";
-import { Eyebrow, Input } from "./ui/Field";
-import { CloseIcon } from "./ui/icons";
+import Button from "../ui/Button";
+import { Eyebrow, Input } from "../ui/Field";
+import { CloseIcon } from "../ui/icons";
 
 export default function CustomTermInput({
   customInput,

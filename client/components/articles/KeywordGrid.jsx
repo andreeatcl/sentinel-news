@@ -1,6 +1,6 @@
-import Button from "./ui/Button";
-import { Eyebrow } from "./ui/Field";
-import { CheckIcon } from "./ui/icons";
+import Button from "../ui/Button";
+import { Eyebrow } from "../ui/Field";
+import { CheckIcon } from "../ui/icons";
 
 export default function KeywordGrid({
   keywords,

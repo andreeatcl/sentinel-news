@@ -1,5 +1,5 @@
-import { Select } from "./ui/Field";
-import { ArrowDownIcon, ArrowUpIcon } from "./ui/icons";
+import { Select } from "./Field";
+import { ArrowDownIcon, ArrowUpIcon } from "./icons";
 
 export default function SortControl({
   value,

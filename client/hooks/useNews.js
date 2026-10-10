@@ -5,7 +5,7 @@ import {
   sanitizeArticles,
   filterTopSources as filterToTopSources,
   filterEnglishOnly as filterToEnglishOnly,
-  prioritizeStateMedia as prioritizeToStateMedia,
+  prioritizeTier,
 } from "../utils/articleFilters";
 
 export function useNews() {
@@ -15,10 +15,7 @@ export function useNews() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [meta, setMeta] = useState(null);
-  // activeQuery is the final built query string shown in the HUD
   const [activeQuery, setActiveQuery] = useState("");
-  // rawTopic stores the original topic/country so sort & time range changes
-  // can re-search without double-wrapping political keywords
   const rawTopicRef = useRef("");
   const extraKeywordsRef = useRef("");
   const isRawRef = useRef(false);
@@ -26,7 +23,7 @@ export function useNews() {
   const queryOptionsRef = useRef({});
   const useTopSourcesOnlyRef = useRef(false);
   const englishOnlyRef = useRef(false);
-  const stateMediaPriorityRef = useRef(false);
+  const sourcePriorityRef = useRef(null);
   const pageRef = useRef(1);
 
   // avoids a new API call when any toggle changes
@@ -34,7 +31,8 @@ export function useNews() {
     let result = inputArticles;
     if (useTopSourcesOnlyRef.current) result = filterToTopSources(result);
     if (englishOnlyRef.current) result = filterToEnglishOnly(result);
-    if (stateMediaPriorityRef.current) result = prioritizeToStateMedia(result);
+    if (sourcePriorityRef.current)
+      result = prioritizeTier(result, sourcePriorityRef.current);
     return result;
   }
 
@@ -49,7 +47,7 @@ export function useNews() {
       queryOptions = {},
       useTopSourcesOnly = false,
       englishOnly = false,
-      stateMediaPriority = false,
+      sourcePriority = null,
       page = 1,
       append = false,
     }) => {
@@ -61,7 +59,7 @@ export function useNews() {
       queryOptionsRef.current = queryOptions;
       useTopSourcesOnlyRef.current = useTopSourcesOnly;
       englishOnlyRef.current = englishOnly;
-      stateMediaPriorityRef.current = stateMediaPriority;
+      sourcePriorityRef.current = sourcePriority;
 
       pageRef.current = page;
       const q = raw
@@ -134,7 +132,7 @@ export function useNews() {
         queryOptions: queryOptionsRef.current,
         useTopSourcesOnly: useTopSourcesOnlyRef.current,
         englishOnly: englishOnlyRef.current,
-        stateMediaPriority: stateMediaPriorityRef.current,
+        sourcePriority: sourcePriorityRef.current,
         page: 1,
         append: false,
       });
@@ -156,7 +154,7 @@ export function useNews() {
         queryOptions: queryOptionsRef.current,
         useTopSourcesOnly: useTopSourcesOnlyRef.current,
         englishOnly: englishOnlyRef.current,
-        stateMediaPriority: stateMediaPriorityRef.current,
+        sourcePriority: sourcePriorityRef.current,
         page: nextPage,
         append: true,
       });
@@ -177,7 +175,7 @@ export function useNews() {
     queryOptionsRef.current = {};
     useTopSourcesOnlyRef.current = false;
     englishOnlyRef.current = false;
-    stateMediaPriorityRef.current = false;
+    sourcePriorityRef.current = null;
     pageRef.current = 1;
   }, []);
 
@@ -197,9 +195,9 @@ export function useNews() {
     [allArticles],
   );
 
-  const setStateMediaPriority = useCallback(
-    (enabled) => {
-      stateMediaPriorityRef.current = enabled;
+  const setSourcePriority = useCallback(
+    (tier) => {
+      sourcePriorityRef.current = tier;
       setArticles(applyClientFilters(allArticles));
     },
     [allArticles],
@@ -222,7 +220,7 @@ export function useNews() {
     loadMore,
     setTopSourcesOnly,
     setEnglishOnly,
-    setStateMediaPriority,
+    setSourcePriority,
     clear,
   };
 }

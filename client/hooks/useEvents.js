@@ -9,7 +9,7 @@ const DEFAULT_FILTERS = {
   tone: Object.keys(TONE_LABELS),
   sortBy: "significance",
   sortDir: "desc",
-  stateMediaPriority: false,
+  sourcePriority: null,
 };
 
 export function useEvents() {

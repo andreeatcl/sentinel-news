@@ -4,17 +4,23 @@ import {
   ROW_BUTTON_CLASS,
   ROW_TITLE_CLASS,
   ROW_META_CLASS,
-} from "./ArticleCard";
-import FavoriteButton from "./FavoriteButton";
-import TrustBadge from "./TrustBadge";
-import EmptyState from "./ui/EmptyState";
-import { toneCategory, TONE_LABELS, TONE_DOT_CLASS } from "../utils/eventTone";
+  MetaDivider,
+} from "../articles/ArticleCard";
+import FavoriteButton from "../favorites/FavoriteButton";
+import TrustBadge from "../TrustBadge";
+import EmptyState from "../ui/EmptyState";
+import {
+  toneCategory,
+  TONE_LABELS,
+  TONE_DOT_CLASS,
+} from "../../utils/eventTone";
 import {
   validActorLabel,
   fallbackHeadline,
   eventTimeLabel,
   getDomain,
-} from "../utils/eventDisplay";
+} from "../../utils/eventDisplay";
+import { favoriteFromEvent } from "../../utils/favorites";
 
 function EventRow({ event, onClick }) {
   const tone = toneCategory(event.goldstein);
@@ -30,24 +36,21 @@ function EventRow({ event, onClick }) {
       ? `${actor1Label} → ${actor2Label}`
       : actor1Label || actor2Label || null;
 
-  const favoriteTarget = event.sourceUrl
-    ? {
-        url: event.sourceUrl,
-        title: headline,
-        source: { name: domain },
-        type: "event",
-      }
-    : null;
+  const favorite = favoriteFromEvent(event);
 
   return (
     <div className={ROW_CLASS}>
       <button onClick={onClick} className={ROW_BUTTON_CLASS}>
-        {/* Source + time */}
+        {/* Tone + time + source */}
         <div className="flex items-center gap-1.5 mb-1.5 min-w-0">
           <span
             className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`}
             title={TONE_LABELS[tone]}
           />
+          <span className={`${ROW_META_CLASS} shrink-0`}>
+            {eventTimeLabel(event)}
+          </span>
+          {domain && <MetaDivider />}
           {domain && (
             <span className="text-xs font-medium text-carbon-300 truncate">
               {domain}
@@ -59,9 +62,6 @@ function EventRow({ event, onClick }) {
             </span>
           )}
           <TrustBadge trust={event._trustLabel} />
-          <span className={`${ROW_META_CLASS} shrink-0 ml-auto pl-2`}>
-            {eventTimeLabel(event)}
-          </span>
         </div>
 
         <p className={ROW_TITLE_CLASS}>{headline}</p>
@@ -79,9 +79,9 @@ function EventRow({ event, onClick }) {
         )}
       </button>
 
-      {favoriteTarget && (
+      {favorite && (
         <div className="absolute top-2.5 right-3">
-          <FavoriteButton article={favoriteTarget} />
+          <FavoriteButton favorite={favorite} />
         </div>
       )}
     </div>

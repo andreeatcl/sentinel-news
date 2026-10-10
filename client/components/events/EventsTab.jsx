@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { CAMEO_ROOT_CATEGORIES } from "../utils/cameoCategories";
-import { TONE_LABELS } from "../utils/eventTone";
-import { AccordionSection, Pill } from "./FilterAccordion";
-import SortControl from "./SortControl";
-import SearchBar from "./SearchBar";
+import { CAMEO_ROOT_CATEGORIES } from "../../utils/cameoCategories";
+import { TONE_LABELS } from "../../utils/eventTone";
+import { AccordionSection, Pill } from "../ui/FilterAccordion";
+import SortControl from "../ui/SortControl";
+import SearchBar from "../ui/SearchBar";
 import EventsList from "./EventsList";
-import Button from "./ui/Button";
-import { Input } from "./ui/Field";
+import { SOURCE_PRIORITY_OPTIONS } from "../articles/ArticlesTab";
+import Button from "../ui/Button";
+import { Input } from "../ui/Field";
 
 const TIME_RANGES = ["48h", "7d", "30d"];
 
@@ -35,7 +36,7 @@ function filtersEqual(a, b) {
     a.timeRange === b.timeRange &&
     a.sortBy === b.sortBy &&
     a.sortDir === b.sortDir &&
-    a.stateMediaPriority === b.stateMediaPriority &&
+    a.sourcePriority === b.sourcePriority &&
     sameSet(a.category, b.category) &&
     sameSet(a.tone, b.tone)
   );
@@ -177,19 +178,22 @@ export default function EventsTab({
 
         <AccordionSection
           title="Source"
-          activeCount={draftFilters.stateMediaPriority ? 1 : 0}
+          activeCount={draftFilters.sourcePriority ? 1 : 0}
         >
-          <Pill
-            active={draftFilters.stateMediaPriority}
-            onClick={() =>
-              setDraftFilters((f) => ({
-                ...f,
-                stateMediaPriority: !f.stateMediaPriority,
-              }))
-            }
-          >
-            Prioritize state media
-          </Pill>
+          {SOURCE_PRIORITY_OPTIONS.map(({ tier, label }) => (
+            <Pill
+              key={tier}
+              active={draftFilters.sourcePriority === tier}
+              onClick={() =>
+                setDraftFilters((f) => ({
+                  ...f,
+                  sourcePriority: f.sourcePriority === tier ? null : tier,
+                }))
+              }
+            >
+              {label}
+            </Pill>
+          ))}
         </AccordionSection>
 
         {/* Client-side only (filters what's already loaded) — instant,

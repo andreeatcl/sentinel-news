@@ -1,18 +1,20 @@
-import { useState } from "react";
-import { isFavorite, addFavorite, removeFavorite } from "../utils/storage";
-import { StarIcon } from "./ui/icons";
+import { createContext, useContext, useState } from "react";
+import { isFavorite, addFavorite, removeFavorite } from "../../utils/storage";
+import { StarIcon } from "../ui/icons";
 
-// reads/writes to localStorage directly instead of carrying fav state through props
-export default function FavoriteButton({ article }) {
-  const [favorited, setFavorited] = useState(() => isFavorite(article.url));
+export const FavoriteContext = createContext(null);
+
+export default function FavoriteButton({ favorite }) {
+  const context = useContext(FavoriteContext);
+  const [favorited, setFavorited] = useState(() => isFavorite(favorite.url));
 
   function toggle(e) {
     e.preventDefault();
     e.stopPropagation();
     if (favorited) {
-      removeFavorite(article.url);
+      removeFavorite(favorite.url);
     } else {
-      addFavorite(article);
+      addFavorite({ ...favorite, context });
     }
     setFavorited(!favorited);
   }

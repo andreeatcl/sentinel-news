@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SearchIcon, MenuIcon, RadarIcon } from "./ui/icons";
+import { SearchIcon, MenuIcon, RadarIcon } from "../ui/icons";
 
 const HUD_SURFACE =
   "pointer-events-auto h-10 bg-carbon-900/90 border border-carbon-800 rounded-lg backdrop-blur-md shadow-pop";

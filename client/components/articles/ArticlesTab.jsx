@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { getCountryKeywordOptions } from "../utils/queryBuilder";
+import { getCountryKeywordOptions } from "../../utils/queryBuilder";
 import KeywordQueryModal from "./KeywordQueryModal";
 import ArticleCard, { SkeletonCard } from "./ArticleCard";
-import { AccordionSection, Pill } from "./FilterAccordion";
-import SortControl from "./SortControl";
-import SearchBar from "./SearchBar";
-import Button from "./ui/Button";
-import EmptyState from "./ui/EmptyState";
+import { AccordionSection, Pill } from "../ui/FilterAccordion";
+import SortControl from "../ui/SortControl";
+import SearchBar from "../ui/SearchBar";
+import Button from "../ui/Button";
+import EmptyState from "../ui/EmptyState";
 
 const TIME_RANGES = ["48h", "7d", "30d"];
+
+// mutually exclusive
+export const SOURCE_PRIORITY_OPTIONS = [
+  { tier: "trusted", label: "Prioritize trusted media" },
+  { tier: "state-affiliated", label: "Prioritize state media" },
+];
 
 const ARTICLE_SORT_OPTIONS = [
   { value: "relevancy", label: "Relevance" },
@@ -33,8 +39,8 @@ export default function ArticlesTab({
   onTopSourcesToggle,
   englishOnly,
   onEnglishOnlyToggle,
-  stateMediaPriority,
-  onStateMediaPriorityToggle,
+  sourcePriority,
+  onSourcePriorityToggle,
   onExtraSearch,
   onLoadMore,
   onSelectArticle,
@@ -117,7 +123,7 @@ export default function ArticlesTab({
           activeCount={
             (useTopSourcesOnly ? 1 : 0) +
             (englishOnly ? 1 : 0) +
-            (stateMediaPriority ? 1 : 0)
+            (sourcePriority ? 1 : 0)
           }
         >
           <Pill active={useTopSourcesOnly} onClick={onTopSourcesToggle}>
@@ -126,12 +132,15 @@ export default function ArticlesTab({
           <Pill active={englishOnly} onClick={onEnglishOnlyToggle}>
             English only
           </Pill>
-          <Pill
-            active={stateMediaPriority}
-            onClick={onStateMediaPriorityToggle}
-          >
-            Prioritize state media
-          </Pill>
+          {SOURCE_PRIORITY_OPTIONS.map(({ tier, label }) => (
+            <Pill
+              key={tier}
+              active={sourcePriority === tier}
+              onClick={() => onSourcePriorityToggle(tier)}
+            >
+              {label}
+            </Pill>
+          ))}
         </AccordionSection>
 
         {selectedCountry && (

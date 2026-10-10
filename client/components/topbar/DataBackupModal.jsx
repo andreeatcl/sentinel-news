@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
-import { exportData, importData } from "../utils/storage";
-import Modal from "./ui/Modal";
-import Button from "./ui/Button";
+import { exportData, importData } from "../../utils/storage";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 
 // download the export as a plain json file that the user can keep
 function downloadJson(data) {

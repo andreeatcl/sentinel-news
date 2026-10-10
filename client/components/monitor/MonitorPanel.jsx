@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PanelHeader from "./PanelHeader";
-import EventsTab from "./EventsTab";
-import ArticlesTab from "./ArticlesTab";
+import EventsTab from "../events/EventsTab";
+import ArticlesTab from "../articles/ArticlesTab";
 
 export default function MonitorPanel({
   articles,
@@ -24,8 +24,8 @@ export default function MonitorPanel({
   onTopSourcesToggle,
   englishOnly,
   onEnglishOnlyToggle,
-  stateMediaPriority,
-  onStateMediaPriorityToggle,
+  sourcePriority,
+  onSourcePriorityToggle,
   onSaveSearch,
   events,
   eventsLoading,
@@ -96,8 +96,8 @@ export default function MonitorPanel({
           onTopSourcesToggle={onTopSourcesToggle}
           englishOnly={englishOnly}
           onEnglishOnlyToggle={onEnglishOnlyToggle}
-          stateMediaPriority={stateMediaPriority}
-          onStateMediaPriorityToggle={onStateMediaPriorityToggle}
+          sourcePriority={sourcePriority}
+          onSourcePriorityToggle={onSourcePriorityToggle}
           onExtraSearch={onExtraSearch}
           onLoadMore={onLoadMore}
           onSelectArticle={onSelectArticle}

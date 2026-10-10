@@ -4,19 +4,20 @@ import {
   TONE_TEXT_CLASS,
   TONE_LABELS,
   TONE_DOT_CLASS,
-} from "../utils/eventTone";
+} from "../../utils/eventTone";
 import {
   validActorLabel,
   fallbackHeadline,
   eventTimeLabel,
   getDomain,
-} from "../utils/eventDisplay";
-import FavoriteButton from "./FavoriteButton";
-import TrustBadge from "./TrustBadge";
-import Modal from "./ui/Modal";
-import Button from "./ui/Button";
-import { Eyebrow } from "./ui/Field";
-import { ExternalIcon } from "./ui/icons";
+} from "../../utils/eventDisplay";
+import { favoriteFromEvent } from "../../utils/favorites";
+import FavoriteButton from "../favorites/FavoriteButton";
+import TrustBadge from "../TrustBadge";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
+import { Eyebrow } from "../ui/Field";
+import { ExternalIcon } from "../ui/icons";
 
 export function DetailSection({ label, children, className = "" }) {
   return (
@@ -64,14 +65,7 @@ export default function EventDetail({ event, onClose }) {
   const domain = getDomain(event.sourceUrl);
   const actor1Label = validActorLabel(event.actor1);
   const actor2Label = validActorLabel(event.actor2);
-  const favoriteTarget = event.sourceUrl
-    ? {
-        url: event.sourceUrl,
-        title: headline,
-        source: { name: domain },
-        type: "event",
-      }
-    : null;
+  const favorite = favoriteFromEvent(event);
 
   return (
     <Modal
@@ -88,9 +82,7 @@ export default function EventDetail({ event, onClose }) {
           <span>{event.location || "Unknown location"}</span>
         </>
       }
-      headerActions={
-        favoriteTarget && <FavoriteButton article={favoriteTarget} />
-      }
+      headerActions={favorite && <FavoriteButton favorite={favorite} />}
     >
       {/* Image from the source article's page, when it has one */}
       {event.image && !imageFailed && (

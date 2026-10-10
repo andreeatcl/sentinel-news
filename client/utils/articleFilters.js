@@ -69,12 +69,9 @@ export function filterEnglishOnly(inputArticles) {
   });
 }
 
-// articles from state-affiliated outlets go to the top of the list
-export function prioritizeStateMedia(inputArticles) {
+export function prioritizeTier(inputArticles, tier) {
   const list = inputArticles || [];
-  const stateMedia = list.filter(
-    (a) => a?._trustLabel?.tier === "state-affiliated",
-  );
-  const rest = list.filter((a) => a?._trustLabel?.tier !== "state-affiliated");
-  return [...stateMedia, ...rest];
+  const matching = list.filter((a) => a?._trustLabel?.tier === tier);
+  const rest = list.filter((a) => a?._trustLabel?.tier !== tier);
+  return [...matching, ...rest];
 }

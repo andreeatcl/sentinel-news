@@ -1,8 +1,9 @@
-import { timeAgo } from "../utils/newsApi";
-import { getDomain } from "../utils/url";
-import FavoriteButton from "./FavoriteButton";
-import TrustBadge from "./TrustBadge";
-import Badge from "./ui/Badge";
+import { timeAgo } from "../../utils/newsApi";
+import { getDomain } from "../../utils/url";
+import { favoriteFromArticle } from "../../utils/favorites";
+import FavoriteButton from "../favorites/FavoriteButton";
+import TrustBadge from "../TrustBadge";
+import Badge from "../ui/Badge";
 
 export const ROW_CLASS = "relative border-b border-carbon-800 group";
 export const ROW_BUTTON_CLASS =
@@ -10,6 +11,10 @@ export const ROW_BUTTON_CLASS =
 export const ROW_TITLE_CLASS =
   "text-sm font-medium text-carbon-100 leading-snug group-hover:text-white transition-colors";
 export const ROW_META_CLASS = "text-xs text-carbon-500";
+
+export function MetaDivider() {
+  return <span aria-hidden className="w-px h-3 bg-carbon-700 shrink-0" />;
+}
 
 export function SkeletonCard() {
   return (
@@ -28,8 +33,12 @@ export default function ArticleCard({ article, onClick }) {
   return (
     <div className={ROW_CLASS}>
       <button onClick={onClick} className={ROW_BUTTON_CLASS}>
-        {/* Source + time */}
+        {/* Time + source */}
         <div className="flex items-center gap-1.5 mb-1.5 min-w-0">
+          <span className={`${ROW_META_CLASS} shrink-0`}>
+            {timeAgo(article.publishedAt)}
+          </span>
+          <MetaDivider />
           <span className="text-xs font-medium text-carbon-300 truncate">
             {article.source?.name || domain}
           </span>
@@ -43,9 +52,6 @@ export default function ArticleCard({ article, onClick }) {
           {article.language && !/^english$/i.test(article.language) && (
             <Badge>{article.language}</Badge>
           )}
-          <span className={`${ROW_META_CLASS} shrink-0 ml-auto pl-2`}>
-            {timeAgo(article.publishedAt)}
-          </span>
         </div>
 
         {/* Title */}
@@ -62,7 +68,7 @@ export default function ArticleCard({ article, onClick }) {
       </button>
 
       <div className="absolute top-2.5 right-3">
-        <FavoriteButton article={article} />
+        <FavoriteButton favorite={favoriteFromArticle(article)} />
       </div>
     </div>
   );

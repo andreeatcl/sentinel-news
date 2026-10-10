@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDownIcon } from "./ui/icons";
+import { ChevronDownIcon } from "./icons";
 
 export function AccordionSection({
   title,

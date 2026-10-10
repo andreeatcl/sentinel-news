@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { getApiKeys, setApiKeys } from "../utils/storage";
-import { testApiKey } from "../utils/newsApi";
-import Modal from "./ui/Modal";
-import Button from "./ui/Button";
-import Badge from "./ui/Badge";
-import { Input } from "./ui/Field";
-import { CheckIcon } from "./ui/icons";
+import { getApiKeys, setApiKeys } from "../../utils/storage";
+import { testApiKey } from "../../utils/newsApi";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
+import Badge from "../ui/Badge";
+import { Input } from "../ui/Field";
+import { CheckIcon } from "../ui/icons";
 
 // Test status per field: "idle" | "testing" | "valid" | "invalid"
 function KeyField({

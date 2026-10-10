@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { getSavedSearches, removeSavedSearch } from "../utils/storage";
-import Modal from "./ui/Modal";
-import Button from "./ui/Button";
-import EmptyState from "./ui/EmptyState";
+import { getSavedSearches, removeSavedSearch } from "../../utils/storage";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
+import EmptyState from "../ui/EmptyState";
 
 export default function SavedSearchesPanel({ isOpen, onClose, onRun }) {
   const [savedSearches, setSavedSearches] = useState([]);

@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import sources from "../utils/sources.json";
-import Modal from "./ui/Modal";
-import { Pill } from "./FilterAccordion";
-import { ExternalIcon } from "./ui/icons";
+import sources from "../../utils/sources.json";
+import Modal from "../ui/Modal";
+import { Pill } from "../ui/FilterAccordion";
+import { ExternalIcon } from "../ui/icons";
 
 export default function SourcesModal({ isOpen, onClose }) {
   const [selectedCategory, setSelectedCategory] = useState("general");

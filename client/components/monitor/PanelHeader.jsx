@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Button, { IconButton } from "./ui/Button";
-import { CheckIcon, CloseIcon } from "./ui/icons";
+import Button, { IconButton } from "../ui/Button";
+import { CheckIcon, CloseIcon } from "../ui/icons";
 
 const TABS = [
   { id: "events", label: "Events" },

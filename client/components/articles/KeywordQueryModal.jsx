@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { quoteKeyword } from "../utils/queryBuilder";
+import { quoteKeyword } from "../../utils/queryBuilder";
 import KeywordGrid from "./KeywordGrid";
 import KeywordOperatorControls from "./KeywordOperatorControls";
 import CustomTermInput from "./CustomTermInput";
-import Modal from "./ui/Modal";
-import Button from "./ui/Button";
+import Modal from "../ui/Modal";
+import Button from "../ui/Button";
 
 export default function KeywordQueryModal({
   isOpen,
