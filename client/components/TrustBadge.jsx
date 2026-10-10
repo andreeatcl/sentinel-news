@@ -1,15 +1,5 @@
 import Badge from "./ui/Badge";
-
-const flagModules = import.meta.glob("../assets/flags/*.svg", {
-  eager: true,
-  import: "default",
-});
-const FLAGS = Object.fromEntries(
-  Object.entries(flagModules).map(([path, src]) => [
-    path.match(/([a-z]{2})\.svg$/)[1],
-    src,
-  ]),
-);
+import { getFlagSrc } from "../utils/flags";
 
 const TIER_STYLE = {
   trusted: { tone: "positive", label: "Trusted" },
@@ -22,7 +12,7 @@ export default function TrustBadge({ trust, detailed = false }) {
   const style = TIER_STYLE[trust.tier];
   if (!style) return null;
 
-  const flagSrc = trust.country && FLAGS[trust.country];
+  const flagSrc = getFlagSrc(trust.country);
 
   return (
     <>

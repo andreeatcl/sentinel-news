@@ -84,6 +84,21 @@ export async function fetchNews({
   return data;
 }
 
+export async function fetchKeyUsage() {
+  const keys = getApiKeys();
+  if (!keys.primary && !keys.backup) return null;
+  try {
+    const res = await fetch(`${BASE}/keys/usage`, {
+      headers: buildAuthHeaders(keys),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.configured ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchHealth() {
   const res = await fetch(`${BASE}/health`);
   return res.json();

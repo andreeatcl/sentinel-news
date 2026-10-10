@@ -8,56 +8,12 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { toneCategory, TONE_HEX } from "../utils/eventTone";
+import { loadCountriesGeoJson, getCountryName } from "../utils/countries";
 
 const TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const TILE_ATTRIBUTION = "&copy; OpenStreetMap contributors";
 
-// local copy with github dataset as fallback
-const GEOJSON_SOURCES = [
-  "/data/countries.geojson",
-  "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson",
-];
-
 const ACCENT_RED = "#D80027";
-const GEOJSON_TIMEOUT_MS = 10000;
-
-async function fetchJsonWithTimeout(url, timeoutMs) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    return response.json();
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-// check for country name mismatch
-function getCountryName(feature) {
-  const properties = feature?.properties ?? {};
-  const candidates = [
-    properties.ADMIN,
-    properties.NAME,
-    properties.NAME_EN,
-    properties.FORMAL_EN,
-    properties.GEONUNIT,
-    properties.BRK_NAME,
-    properties.SOVEREIGNT,
-    properties.COUNTRY,
-    properties.country,
-    properties.name,
-    properties.NAME_LONG,
-  ];
-
-  const resolved = candidates.find(
-    (value) => typeof value === "string" && value.trim().length > 0,
-  );
-
-  return resolved?.trim() ?? "Unknown";
-}
 
 // country border styling
 function countryStyle(feature, selectedCountry) {
@@ -156,28 +112,16 @@ export default function WorldMap({
 
   useEffect(() => {
     let canceled = false;
-
-    async function loadGeoData() {
-      for (const source of GEOJSON_SOURCES) {
-        try {
-          const data = await fetchJsonWithTimeout(source, GEOJSON_TIMEOUT_MS);
-          if (!canceled) {
-            setGeoData(data);
-            setGeoError(false);
-          }
-          return;
-        } catch {
-          continue;
+    loadCountriesGeoJson()
+      .then((data) => {
+        if (!canceled) {
+          setGeoData(data);
+          setGeoError(false);
         }
-      }
-
-      if (!canceled) {
-        setGeoError(true);
-      }
-    }
-
-    loadGeoData();
-
+      })
+      .catch(() => {
+        if (!canceled) setGeoError(true);
+      });
     return () => {
       canceled = true;
     };

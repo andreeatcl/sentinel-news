@@ -53,6 +53,7 @@ export default function TopBar({
   onSearch,
   loading,
   meta,
+  credits,
   activeQuery,
   onSourcesClick,
   onKeysClick,
@@ -70,16 +71,7 @@ export default function TopBar({
   }
 
   const remaining =
-    typeof meta?.apiCallsRemaining === "number" ? meta.apiCallsRemaining : "—";
-  const creditsDot =
-    typeof remaining !== "number"
-      ? "bg-carbon-500"
-      : remaining < 20
-        ? "bg-signal-red"
-        : remaining < 50
-          ? "bg-signal-amber"
-          : "bg-signal-green";
-
+    typeof credits?.remaining === "number" ? credits.remaining : "—";
   const navItems = [
     { label: "Sources", onClick: onSourcesClick },
     { label: "Favorites", onClick: onFavoritesClick },
@@ -123,7 +115,6 @@ export default function TopBar({
         className={`${HUD_SURFACE} hidden lg:flex items-center gap-2 px-3 shrink-0`}
         title="NewsAPI calls remaining today"
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${creditsDot}`} />
         <span className="text-xs text-carbon-400">Credits</span>
         <span className="text-xs font-mono text-carbon-100">
           {remaining}/100
@@ -133,7 +124,7 @@ export default function TopBar({
             Cached
           </span>
         )}
-        {meta?.keyUsed === "backup" && (
+        {credits?.keyUsed === "backup" && (
           <span className="text-2xs text-signal-amber border-l border-carbon-700 pl-2">
             Backup key
           </span>

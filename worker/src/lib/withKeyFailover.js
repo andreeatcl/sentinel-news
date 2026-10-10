@@ -1,4 +1,10 @@
-import { DAILY_LIMIT, getUsage, hashKey, trackUsage } from "./keys.js";
+import {
+  DAILY_LIMIT,
+  buildTryOrder,
+  getUsage,
+  hashKey,
+  trackUsage,
+} from "./keys.js";
 
 // status codes to monitor API (key) status
 const QUOTA_OR_AUTH_STATUS = new Set([401, 426, 429]);
@@ -15,15 +21,6 @@ function isQuotaOrAuthError(response, data) {
     QUOTA_OR_AUTH_STATUS.has(response.status) ||
     QUOTA_OR_AUTH_CODES.has(data?.code)
   );
-}
-
-function buildTryOrder({ primary, backup, lastGood }) {
-  const slots = [
-    { slot: "primary", key: primary },
-    { slot: "backup", key: backup },
-  ].filter((s) => s.key);
-  if (lastGood === "backup") slots.reverse();
-  return slots;
 }
 
 export async function withKeyFailover(env, keys, fetchFn) {

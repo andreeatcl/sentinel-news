@@ -4,7 +4,12 @@ import {
   fetchTopHeadlines,
 } from "../services/newsApiService.js";
 import { getCacheKey, getCached, setCached } from "../lib/cache.js";
-import { extractKeys } from "../lib/keys.js";
+import {
+  extractKeys,
+  getActiveKeyUsage,
+  hashKey,
+  trackUsage,
+} from "../lib/keys.js";
 import { withKeyFailover } from "../lib/withKeyFailover.js";
 import {
   buildGdeltDocQuery,
@@ -123,10 +128,15 @@ news.get("/news", async (c) => {
 
   const cached = await getCached(c.env, cacheKey);
   if (cached) {
+    const usage = await getActiveKeyUsage(c.env, keys);
     return c.json({
       ...cached.data,
       _cached: true,
       _cacheAge: Math.round((Date.now() - cached.timestamp) / 1000),
+      ...(usage && {
+        _apiCallsToday: usage.used,
+        _apiCallsRemaining: usage.remaining,
+      }),
     });
   }
 
@@ -189,6 +199,17 @@ news.get("/news", async (c) => {
   });
 });
 
+news.get("/keys/usage", async (c) => {
+  const usage = await getActiveKeyUsage(c.env, extractKeys(c.req.raw));
+  if (!usage) return c.json({ configured: false });
+  return c.json({
+    configured: true,
+    keyUsed: usage.slot,
+    apiCallsToday: usage.used,
+    apiCallsRemaining: usage.remaining,
+  });
+});
+
 // test submitted API key
 news.get("/keys/test", async (c) => {
   const key = c.req.header("X-Newsapi-Key");
@@ -203,6 +224,7 @@ news.get("/keys/test", async (c) => {
       pageSize: 1,
     });
     if (response.ok && data.status !== "error") {
+      await trackUsage(c.env, await hashKey(key));
       return c.json({ valid: true });
     }
     return c.json({ valid: false, message: data.message || "Key rejected." });

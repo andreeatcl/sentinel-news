@@ -17,6 +17,15 @@ export function extractKeys(request) {
   };
 }
 
+export function buildTryOrder({ primary, backup, lastGood }) {
+  const slots = [
+    { slot: "primary", key: primary },
+    { slot: "backup", key: backup },
+  ].filter((s) => s.key);
+  if (lastGood === "backup") slots.reverse();
+  return slots;
+}
+
 function usageKvKey(keyHash) {
   const day = new Date().toISOString().slice(0, 10);
   return `usage:${keyHash}:${day}`;
@@ -33,4 +42,14 @@ export async function trackUsage(env, keyHash) {
   // expires after 2 days so old counters clean themselves up
   await env.CACHE.put(kvKey, String(next), { expirationTtl: 60 * 60 * 48 });
   return next;
+}
+
+export async function getActiveKeyUsage(env, keys) {
+  let last = null;
+  for (const { slot, key } of buildTryOrder(keys)) {
+    const used = await getUsage(env, await hashKey(key));
+    last = { slot, used, remaining: Math.max(0, DAILY_LIMIT - used) };
+    if (used < DAILY_LIMIT) return last;
+  }
+  return last; // every key exhausted — report the last one tried (0 left)
 }

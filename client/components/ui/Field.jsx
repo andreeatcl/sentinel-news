@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import { ChevronDownIcon } from "./icons";
 
-const FIELD =
+export const FIELD =
   "bg-carbon-850 border border-carbon-700 rounded-md text-carbon-100 placeholder:text-carbon-500 outline-none transition-colors hover:border-carbon-600 focus:border-carbon-400 focus-visible:ring-0";
 
 const SIZES = {

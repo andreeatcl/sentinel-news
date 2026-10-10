@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import WorldMap from "./components/WorldMap";
+import CountryPicker from "./components/CountryPicker";
 import TopBar from "./components/topbar/TopBar";
 import MonitorPanel from "./components/monitor/MonitorPanel";
 import SourcesModal from "./components/topbar/SourcesModal";
@@ -11,6 +12,7 @@ import EventDetail from "./components/events/EventDetail";
 import ArticleDetail from "./components/articles/ArticleDetail";
 import { FavoriteContext } from "./components/favorites/FavoriteButton";
 import { useAppControls } from "./hooks/useAppControls";
+import { useApiCredits } from "./hooks/useApiCredits";
 import { hasAnyApiKey, addSavedSearch } from "./utils/storage";
 
 export default function App() {
@@ -61,6 +63,8 @@ export default function App() {
     getCurrentSearch,
   } = useAppControls();
 
+  const { credits, refreshCredits } = useApiCredits(meta);
+
   // a country selection opens the panel
   // Events tab loads immediately
   // Articles tab only fetches once it is opened
@@ -97,7 +101,10 @@ export default function App() {
         />
         <ApiKeysModal
           isOpen={showKeysModal}
-          onClose={() => setShowKeysModal(false)}
+          onClose={() => {
+            setShowKeysModal(false);
+            refreshCredits();
+          }}
         />
         <FavoritesPanel
           isOpen={showFavorites}
@@ -142,6 +149,7 @@ export default function App() {
           onSearch={handleGlobalSearch}
           loading={loading}
           meta={meta}
+          credits={credits}
           activeQuery={activeQuery}
           onSourcesClick={() => setShowSourcesModal(true)}
           onKeysClick={() => setShowKeysModal(true)}
@@ -193,9 +201,19 @@ export default function App() {
         {/* Bottom HUD bar — hidden once the panel covers the screen */}
         {!panelOpen && (
           <div className="absolute bottom-3 left-3 z-[998] flex items-center gap-3 pointer-events-none">
-            <span className="hidden sm:inline text-2xs text-carbon-300 bg-carbon-900/90 border border-carbon-800 rounded-full px-3 py-1 backdrop-blur-md">
-              Select a country to start monitoring
-            </span>
+            <div className="pointer-events-auto flex items-center gap-2.5 bg-carbon-900/90 border border-carbon-800 rounded-full py-1 pl-2 pr-2.5 sm:pl-3.5 backdrop-blur-md">
+              <span className="hidden sm:inline text-2xs text-carbon-300">
+                Select a country to start monitoring
+              </span>
+              <span
+                aria-hidden
+                className="hidden sm:block w-px h-3.5 bg-carbon-700"
+              />
+              <CountryPicker
+                value={selectedCountry}
+                onSelect={handleCountryClick}
+              />
+            </div>
           </div>
         )}
       </div>
