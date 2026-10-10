@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { exportData, importData } from "../utils/storage";
+import Modal from "./ui/Modal";
+import Button from "./ui/Button";
 
 // download the export as a plain json file that the user can keep
 function downloadJson(data) {
@@ -43,76 +45,50 @@ export default function DataBackupModal({ isOpen, onClose }) {
     }
   }
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm px-3"
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      width="sm"
+      title="Backup"
+      subtitle="API keys, favorites and saved searches"
     >
-      <div
-        className="w-full max-w-md bg-carbon-900 border border-carbon-700/80 rounded-lg flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-carbon-700/70 shrink-0">
-          <div>
-            <h1 className="font-display text-white tracking-widest text-xl leading-none">
-              BACKUP
-            </h1>
-            <p className="text-[10px] font-mono text-carbon-500 mt-1 uppercase tracking-widest">
-              API keys, favorites & saved searches
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-carbon-500 hover:text-white transition-colors text-2xl leading-none w-10 h-10 flex items-center justify-center"
+      <div className="px-5 py-5 space-y-4">
+        <p className="text-sm text-carbon-400 leading-relaxed">
+          Everything is stored only in this browser. If you clear site data,
+          switch devices, or the browser evicts storage, it's gone unless you've
+          exported a backup.
+        </p>
+
+        <div className="flex items-center gap-2">
+          <Button variant="primary" onClick={handleExport} className="flex-1">
+            Export backup
+          </Button>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1"
           >
-            ×
-          </button>
+            Import backup
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            onChange={handleImportFile}
+            className="hidden"
+          />
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-4">
-          <p className="text-[11px] font-body text-carbon-500 leading-relaxed">
-            Everything is stored only in this browser. If you clear site data,
-            switch devices, or the browser evicts storage, it's gone unless
-            you've exported a backup.
+        {status && (
+          <p
+            className={`text-xs ${
+              status.type === "ok" ? "text-signal-green" : "text-signal-red"
+            }`}
+          >
+            {status.message}
           </p>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExport}
-              className="flex-1 text-xs font-mono font-bold uppercase tracking-widest px-4 py-2 rounded bg-signal-cyan/15 border border-signal-cyan/50 text-signal-cyan hover:bg-signal-cyan/25 transition-colors"
-            >
-              Export
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-1 text-xs font-mono font-bold uppercase tracking-widest px-4 py-2 rounded border border-carbon-600/60 text-carbon-300 hover:border-carbon-500 transition-colors"
-            >
-              Import
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              onChange={handleImportFile}
-              className="hidden"
-            />
-          </div>
-
-          {status && (
-            <p
-              className={`text-[10px] font-mono ${
-                status.type === "ok" ? "text-signal-green" : "text-signal-red"
-              }`}
-            >
-              {status.message}
-            </p>
-          )}
-        </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

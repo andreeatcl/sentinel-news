@@ -1,7 +1,14 @@
-import { SkeletonCard } from "./ArticleCard";
+import {
+  SkeletonCard,
+  ROW_CLASS,
+  ROW_BUTTON_CLASS,
+  ROW_TITLE_CLASS,
+  ROW_META_CLASS,
+} from "./ArticleCard";
 import FavoriteButton from "./FavoriteButton";
 import TrustBadge from "./TrustBadge";
-import { toneCategory } from "../utils/eventTone";
+import EmptyState from "./ui/EmptyState";
+import { toneCategory, TONE_LABELS, TONE_DOT_CLASS } from "../utils/eventTone";
 import {
   validActorLabel,
   fallbackHeadline,
@@ -11,12 +18,7 @@ import {
 
 function EventRow({ event, onClick }) {
   const tone = toneCategory(event.goldstein);
-  const dotClass =
-    tone === "positive"
-      ? "bg-signal-green"
-      : tone === "negative"
-        ? "bg-signal-red"
-        : "bg-signal-amber";
+  const dotClass = TONE_DOT_CLASS[tone];
 
   const headline = event.headline || fallbackHeadline(event);
   const domain = getDomain(event.sourceUrl);
@@ -38,56 +40,47 @@ function EventRow({ event, onClick }) {
     : null;
 
   return (
-    <div className="relative border-b border-carbon-700/50 group">
-      <button
-        onClick={onClick}
-        className="w-full text-left p-4 pr-9 hover:bg-carbon-700/40 transition-colors"
-      >
-        {/* Headline: the actual "what happened" */}
-        <div className="flex items-start gap-2 mb-1">
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${dotClass}`}
-          />
-          <p className="text-sm font-body font-bold text-white leading-snug group-hover:text-signal-cyan transition-colors">
-            {headline}
-          </p>
-        </div>
-
+    <div className={ROW_CLASS}>
+      <button onClick={onClick} className={ROW_BUTTON_CLASS}>
         {/* Source + time */}
-        <div className="flex items-center justify-between pl-4 mb-1">
+        <div className="flex items-center gap-1.5 mb-1.5 min-w-0">
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`}
+            title={TONE_LABELS[tone]}
+          />
           {domain && (
-            <span className="flex items-center gap-1.5 min-w-0 max-w-[60%]">
-              <span className="text-[9px] font-mono text-carbon-500 truncate">
-                {domain}
-                {event.numSources > 1 && ` · ${event.numSources} sources`}
-              </span>
-              <TrustBadge trust={event._trustLabel} />
+            <span className="text-xs font-medium text-carbon-300 truncate">
+              {domain}
             </span>
           )}
-          <span className="text-[9px] font-mono text-carbon-500 shrink-0 uppercase tracking-wider ml-auto">
+          {event.numSources > 1 && (
+            <span className={`${ROW_META_CLASS} shrink-0`}>
+              · {event.numSources} sources
+            </span>
+          )}
+          <TrustBadge trust={event._trustLabel} />
+          <span className={`${ROW_META_CLASS} shrink-0 ml-auto pl-2`}>
             {eventTimeLabel(event)}
           </span>
         </div>
 
-        {/* Who */}
-        {actorsLine && (
-          <p className="text-[11px] font-mono text-carbon-400 truncate pl-4">
-            {actorsLine}
-          </p>
-        )}
+        <p className={ROW_TITLE_CLASS}>{headline}</p>
 
-        {/* Where */}
-        {event.location && (
-          <p className="text-[10px] font-mono text-carbon-600 mt-1 truncate pl-4">
-            📍 {event.location}
+        {(actorsLine || event.location) && (
+          <p className="text-xs text-carbon-400 mt-1 truncate">
+            {actorsLine}
+            {actorsLine && event.location && (
+              <span className="text-carbon-600"> · </span>
+            )}
+            {event.location && (
+              <span className="text-carbon-500">{event.location}</span>
+            )}
           </p>
         )}
       </button>
 
-      {/* A nested <button> inside the row's <button> would be invalid —
-          this sits as a sibling, absolutely positioned on top instead */}
       {favoriteTarget && (
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-2.5 right-3">
           <FavoriteButton article={favoriteTarget} />
         </div>
       )}
@@ -108,26 +101,16 @@ export default function EventsList({ events, loading, error, onSelectEvent }) {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
-        <span className="text-signal-red font-mono text-sm mb-2">
-          ⚠ SIGNAL LOST
-        </span>
-        <p className="text-carbon-500 text-xs font-mono">{error}</p>
-      </div>
+      <EmptyState error title="Couldn't load events" description={error} />
     );
   }
 
   if (events.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
-        <span className="text-carbon-600 font-mono text-xs uppercase tracking-widest">
-          No significant events found
-        </span>
-        <p className="text-carbon-600 text-[10px] font-mono mt-2">
-          Try a wider time range, or check back later — GDELT coverage builds up
-          over time
-        </p>
-      </div>
+      <EmptyState
+        title="No significant events found"
+        description="Try a wider time range, or check back later — GDELT coverage builds up over time."
+      />
     );
   }
 

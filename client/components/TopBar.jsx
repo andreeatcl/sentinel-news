@@ -1,5 +1,53 @@
-import { useState } from "react";
-import TopBarIconButton from "./TopBarIconButton";
+import { useEffect, useRef, useState } from "react";
+import { SearchIcon, MenuIcon, RadarIcon } from "./ui/icons";
+
+const HUD_SURFACE =
+  "pointer-events-auto h-10 bg-carbon-900/90 border border-carbon-800 rounded-lg backdrop-blur-md shadow-pop";
+
+function NavMenu({ items }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e) {
+      if (!ref.current?.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", handleClick);
+    return () => document.removeEventListener("pointerdown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative md:hidden shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label="Menu"
+        className={`${HUD_SURFACE} w-10 flex items-center justify-center text-carbon-300 hover:text-white transition-colors`}
+      >
+        <MenuIcon />
+      </button>
+      {open && (
+        <div className="pointer-events-auto absolute right-0 top-full mt-2 w-44 p-1 bg-carbon-900 border border-carbon-800 rounded-lg shadow-panel animate-pop-in">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                item.onClick();
+              }}
+              className="w-full h-9 px-3 flex items-center rounded-md text-sm text-carbon-200 hover:bg-carbon-800 hover:text-white transition-colors"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TopBar({
   onSearch,
@@ -11,7 +59,6 @@ export default function TopBar({
   onFavoritesClick,
   onSavedSearchesClick,
   onBackupClick,
-  isMobile = false,
 }) {
   const [input, setInput] = useState("");
 
@@ -24,17 +71,29 @@ export default function TopBar({
 
   const remaining =
     typeof meta?.apiCallsRemaining === "number" ? meta.apiCallsRemaining : "—";
+  const creditsDot =
+    typeof remaining !== "number"
+      ? "bg-carbon-500"
+      : remaining < 20
+        ? "bg-signal-red"
+        : remaining < 50
+          ? "bg-signal-amber"
+          : "bg-signal-green";
+
+  const navItems = [
+    { label: "Sources", onClick: onSourcesClick },
+    { label: "Favorites", onClick: onFavoritesClick },
+    { label: "Saved", onClick: onSavedSearchesClick },
+    { label: "Backup", onClick: onBackupClick },
+    { label: "API keys", onClick: onKeysClick },
+  ];
 
   return (
-    <div
-      className={`absolute top-0 left-0 right-0 z-[1000] flex gap-2 px-3 py-2 pointer-events-none ${
-        isMobile ? "items-stretch" : "items-center"
-      }`}
-    >
+    <div className="absolute top-0 left-0 right-0 z-[1000] flex items-center gap-2 p-3 pointer-events-none">
       {/* Branding */}
-      <div className="pointer-events-auto flex items-center gap-2 bg-carbon-900/95 border border-carbon-600/60 rounded px-2.5 py-2 backdrop-blur-sm shrink-0">
-        <span className="w-2 h-2 rounded-full bg-signal-red pulse-dot" />
-        <span className="font-display text-white tracking-widest text-base sm:text-lg leading-none">
+      <div className={`${HUD_SURFACE} flex items-center gap-2 px-3 shrink-0`}>
+        <RadarIcon className="w-5 h-5 text-carbon-200 shrink-0" />
+        <span className="hidden sm:inline text-sm font-semibold tracking-[0.18em] text-white">
           SENTINEL
         </span>
       </div>
@@ -42,110 +101,78 @@ export default function TopBar({
       {/* Search */}
       <form
         onSubmit={handleSubmit}
-        className="pointer-events-auto flex-1 max-w-xl search-glow min-w-0"
+        className={`${HUD_SURFACE} flex-1 max-w-xl min-w-0 flex items-center focus-within:border-carbon-600 transition-colors`}
       >
-        <div className="flex items-center bg-carbon-900/95 border border-carbon-600/60 rounded backdrop-blur-sm overflow-hidden">
-          <span className="pl-3 font-mono text-xs select-none text-signal-cyan">
-            ⌕
+        <SearchIcon className="w-4 h-4 ml-3 text-carbon-500 shrink-0" />
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Search global events…"
+          className="flex-1 min-w-0 h-full bg-transparent text-sm text-white px-2.5 outline-none focus-visible:ring-0 placeholder:text-carbon-500"
+        />
+        {loading && (
+          <span className="text-xs text-carbon-500 pr-3 shrink-0">
+            Searching…
           </span>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Search global events… e.g. NATO, elections, sanctions"
-            className="flex-1 bg-transparent text-white font-body text-sm px-3 py-2 outline-none placeholder:text-carbon-500"
-          />
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="px-4 py-2 text-xs font-mono font-bold text-signal-cyan border-l border-carbon-600/60 hover:bg-carbon-700 transition-colors disabled:opacity-40"
-          >
-            {loading ? "..." : "SCAN"}
-          </button>
-        </div>
+        )}
       </form>
 
       {/* API credit indicator */}
-      <div className="pointer-events-auto hidden sm:flex items-center gap-2 bg-carbon-900/95 border border-carbon-600/60 rounded px-3 py-2 backdrop-blur-sm">
-        <div className="flex flex-col items-end">
-          <span className="text-[10px] font-mono text-carbon-500 uppercase tracking-widest">
-            Credits
-          </span>
-          <span
-            className={`text-xs font-mono font-bold ${
-              typeof remaining === "number" && remaining < 20
-                ? "text-signal-red"
-                : typeof remaining === "number" && remaining < 50
-                  ? "text-signal-amber"
-                  : "text-signal-green"
-            }`}
-          >
-            {remaining} / 100
-          </span>
-        </div>
+      <div
+        className={`${HUD_SURFACE} hidden lg:flex items-center gap-2 px-3 shrink-0`}
+        title="NewsAPI calls remaining today"
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${creditsDot}`} />
+        <span className="text-xs text-carbon-400">Credits</span>
+        <span className="text-xs font-mono text-carbon-100">
+          {remaining}/100
+        </span>
         {meta?.cached && (
-          <span className="text-[9px] font-mono text-signal-cyan border border-signal-cyan/30 rounded px-1 py-0.5 leading-none">
-            CACHED
+          <span className="text-2xs text-carbon-400 border-l border-carbon-700 pl-2">
+            Cached
           </span>
         )}
         {meta?.keyUsed === "backup" && (
-          <span className="text-[9px] font-mono text-signal-amber border border-signal-amber/30 rounded px-1 py-0.5 leading-none">
-            BACKUP KEY
+          <span className="text-2xs text-signal-amber border-l border-carbon-700 pl-2">
+            Backup key
           </span>
         )}
       </div>
 
-      {/* [[TO REPLACE]] icon buttons */}
-      <TopBarIconButton onClick={onKeysClick} title="API keys">
-        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
-          🔑
-        </span>
-      </TopBarIconButton>
-
-      <TopBarIconButton onClick={onSourcesClick} title="Top sources">
-        <span className="w-2 h-2 rounded-full bg-signal-green" />
-        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors hidden sm:inline">
-          Sources
-        </span>
-      </TopBarIconButton>
-
-      <TopBarIconButton onClick={onFavoritesClick} title="Favorites">
-        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
-          ⭐
-        </span>
-      </TopBarIconButton>
-
-      <TopBarIconButton onClick={onSavedSearchesClick} title="Saved searches">
-        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
-          🔖
-        </span>
-      </TopBarIconButton>
-
-      <TopBarIconButton onClick={onBackupClick} title="Backup data">
-        <span className="text-[10px] font-mono text-carbon-400 group-hover:text-signal-cyan uppercase tracking-widest transition-colors">
-          💾
-        </span>
-      </TopBarIconButton>
+      <nav
+        className={`${HUD_SURFACE} hidden md:flex items-center gap-0.5 px-1 shrink-0`}
+      >
+        {navItems.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            onClick={item.onClick}
+            className="h-8 px-2.5 rounded-md text-xs font-medium text-carbon-300 hover:bg-carbon-800 hover:text-white transition-colors"
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+      <NavMenu items={navItems} />
 
       {/* Active query label */}
       {activeQuery && (
         <div
-          className="pointer-events-auto hidden lg:block group relative bg-carbon-900/95 border border-carbon-600/40 rounded px-3 py-2 backdrop-blur-sm max-w-xs"
+          className={`${HUD_SURFACE} hidden xl:flex flex-col justify-center group relative px-3 max-w-xs`}
           title={activeQuery}
           tabIndex={0}
         >
-          <span className="text-[10px] font-mono text-carbon-500 uppercase tracking-widest block">
-            Query
-          </span>
-          <span className="text-xs font-mono text-signal-cyan truncate block">
+          <span className="text-2xs text-carbon-500 leading-none">Query</span>
+          <span className="text-xs font-mono text-carbon-200 truncate leading-tight mt-0.5">
             {activeQuery}
           </span>
 
-          <div className="pointer-events-none absolute right-0 top-full mt-2 w-[540px] max-w-[75vw] p-3 bg-carbon-900 border border-carbon-600/70 rounded shadow-lg z-[1001] opacity-0 invisible transition-opacity duration-150 group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible">
-            <span className="text-[10px] font-mono text-carbon-500 uppercase tracking-widest block mb-1">
+          <div className="pointer-events-none absolute right-0 top-full mt-2 w-[540px] max-w-[75vw] p-3 bg-carbon-900 border border-carbon-800 rounded-lg shadow-panel z-[1001] opacity-0 invisible transition-opacity duration-150 group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible">
+            <span className="text-2xs font-medium uppercase tracking-wider text-carbon-500 block mb-1.5">
               Full query
             </span>
-            <p className="text-[11px] font-mono text-signal-cyan whitespace-pre-wrap break-words leading-relaxed max-h-44 overflow-y-auto">
+            <p className="text-xs font-mono text-carbon-200 whitespace-pre-wrap break-words leading-relaxed max-h-44 overflow-y-auto">
               {activeQuery}
             </p>
           </div>

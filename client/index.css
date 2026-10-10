@@ -1,3 +1,6 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,25 +13,33 @@ body,
   margin: 0;
 }
 
-body {
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    Segoe UI,
-    Roboto,
-    sans-serif;
-  background: #080a0e;
-  color: #ffffff;
-  overflow: hidden;
+@layer base {
+  body {
+    @apply bg-carbon-950 font-sans text-carbon-100 antialiased;
+    overflow: hidden;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-white/40 ring-offset-0;
+  }
+
+  select option {
+    @apply bg-carbon-850 text-carbon-100;
+  }
 }
 
-/* ── Leaflet dark mode inversion ── */
-.leaflet-layer,
-.leaflet-control-zoom-in,
-.leaflet-control-zoom-out,
-.leaflet-control-attribution {
+/* ── Leaflet ── */
+/* Inverts the OSM tiles into a dark map */
+.leaflet-layer {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
+
+/* Leaflet makes country paths focusable; the focus outline draws a box
+   around the whole shape's bounds after a click */
+.leaflet-interactive:focus,
+.leaflet-container path:focus {
+  outline: none;
 }
 
 /* Keep our GeoJSON overlays un-inverted */
@@ -36,72 +47,50 @@ body {
   filter: none;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #0d1017;
-}
-::-webkit-scrollbar-thumb {
-  background: #2e3850;
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #d80027;
-}
-
-/* Leaflet container fill */
 .leaflet-container {
-  background: #080a0e !important;
+  @apply bg-carbon-950 font-sans;
   width: 100%;
   height: 100%;
 }
 
-/* Pulsing dot for live indicator */
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
+.leaflet-bar {
+  @apply overflow-hidden rounded-lg border border-carbon-700 shadow-pop !important;
 }
-.pulse-dot {
-  animation: pulse-dot 1.5s ease-in-out infinite;
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  @apply border-carbon-700 bg-carbon-900 text-carbon-200 !important;
+}
+.leaflet-bar a:hover {
+  @apply bg-carbon-800 text-white !important;
 }
 
-/* Sidebar slide-in */
-@keyframes slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.leaflet-control-attribution {
+  @apply rounded-tl-md bg-carbon-900/80 text-carbon-500 !important;
 }
-.sidebar-enter {
-  animation: slide-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+.leaflet-control-attribution a {
+  @apply text-carbon-400 !important;
 }
 
-/* Card shimmer */
-@keyframes shimmer {
-  0% {
-    background-position: -400px 0;
-  }
-  100% {
-    background-position: 400px 0;
-  }
+.leaflet-tooltip.leaflet-tooltip-dark {
+  @apply rounded-md border border-carbon-700 bg-carbon-900 px-2 py-1 text-xs font-medium text-white shadow-pop;
 }
-.skeleton {
-  background: linear-gradient(90deg, #141820 25%, #1c2130 50%, #141820 75%);
-  background-size: 400px 100%;
-  animation: shimmer 1.4s infinite;
+.leaflet-tooltip-dark::before {
+  display: none;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-carbon-700;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-carbon-600;
 }
 
 /* Hides the scrollbar on a scrollable element while keeping it scrollable
@@ -114,9 +103,72 @@ body {
   display: none; /* Chrome/Safari/Chromium Edge */
 }
 
-/* Search bar glow on focus */
-.search-glow:focus-within {
-  box-shadow:
-    0 0 0 1px #d8002744,
-    0 0 20px #d8002722;
+/* Radar logo: the sweep turns once every 4s; the blip (at ~38° from 12
+   o'clock) is hit by the sweep's leading edge (starting at 75°) at ~90% of
+   the cycle, flashes, then decays until the next pass */
+@keyframes radar-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes radar-blip {
+  0% {
+    opacity: 0.7;
+  }
+  55% {
+    opacity: 0.15;
+  }
+  89.5% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+.radar-sweep {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+  animation: radar-sweep 4s linear infinite;
+}
+.radar-blip {
+  animation: radar-blip 4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep,
+  .radar-blip {
+    animation: none;
+  }
+}
+
+/* Monitor panel entrance */
+@keyframes panel-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.panel-enter {
+  animation: panel-in 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Loading skeleton shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1d1d20 25%, #2a2a2e 50%, #1d1d20 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite;
 }

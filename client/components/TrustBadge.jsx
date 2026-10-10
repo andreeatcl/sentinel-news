@@ -1,3 +1,5 @@
+import Badge from "./ui/Badge";
+
 const flagModules = import.meta.glob("../assets/flags/*.svg", {
   eager: true,
   import: "default",
@@ -9,22 +11,10 @@ const FLAGS = Object.fromEntries(
   ]),
 );
 
-const CHIP_CLASS =
-  "text-[8px] font-mono font-bold border rounded px-1 py-0.5 uppercase tracking-wider shrink-0";
-
 const TIER_STYLE = {
-  trusted: {
-    chip: "text-signal-green border-signal-green/40 bg-signal-green/10",
-    label: "TRUSTED",
-  },
-  "state-affiliated": {
-    chip: "text-signal-red border-signal-red/40 bg-signal-red/10",
-    label: "STATE MEDIA",
-  },
-  unreliable: {
-    chip: "text-signal-red border-signal-red/40 bg-signal-red/10",
-    label: "UNRELIABLE",
-  },
+  trusted: { tone: "positive", label: "Trusted" },
+  "state-affiliated": { tone: "negative", label: "State media" },
+  unreliable: { tone: "negative", label: "Unreliable" },
 };
 
 export default function TrustBadge({ trust, detailed = false }) {
@@ -41,12 +31,12 @@ export default function TrustBadge({ trust, detailed = false }) {
           src={flagSrc}
           alt={trust.country.toUpperCase()}
           title={trust.country.toUpperCase()}
-          className="w-3.5 h-2.5 rounded-[1px] shrink-0 object-cover"
+          className="w-4 h-3 rounded-sm shrink-0 object-cover ring-1 ring-white/10"
         />
       )}
-      <span className={`${CHIP_CLASS} ${style.chip}`}>{style.label}</span>
+      <Badge tone={style.tone}>{style.label}</Badge>
       {detailed && trust.note && (
-        <span className="block text-[10px] font-mono text-carbon-500 mt-1.5 normal-case font-normal">
+        <span className="block w-full text-xs text-carbon-500 mt-1.5 font-normal leading-relaxed">
           {trust.note}
         </span>
       )}

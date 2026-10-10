@@ -61,7 +61,7 @@ export async function fetchNews({
   const { primary, backup, lastGood } = getApiKeys();
   if (!primary && !backup) {
     throw new Error(
-      "No API key configured. Add one via the key icon in the top bar.",
+      "No API key configured. Add one under API keys in the top bar.",
     );
   }
 

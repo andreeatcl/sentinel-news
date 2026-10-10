@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDownIcon } from "./ui/icons";
 
 export function AccordionSection({
   title,
@@ -15,31 +16,31 @@ export function AccordionSection({
   const showSelectAllToggle = open && onSelectAll && onDeselectAll;
 
   return (
-    <div className="border-b border-carbon-700/50">
-      <div className="flex items-center justify-between px-4 py-2.5">
+    <div className="border-b border-carbon-800">
+      <div className="flex items-center justify-between px-4 h-10">
         {/* A single button, not nested inside the select-all button below */}
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-widest text-carbon-400 hover:text-white transition-colors"
+          className="flex items-center gap-2 h-full text-xs font-medium text-carbon-300 hover:text-white transition-colors"
         >
           {title}
           {activeCount > 0 && (
-            <span className="text-[9px] text-signal-cyan bg-signal-cyan/15 rounded-full px-1.5 leading-4">
+            <span className="min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-accent text-2xs font-semibold text-white">
               {activeCount}
             </span>
           )}
-          <span
-            className={`text-carbon-500 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-          >
-            ▾
-          </span>
+          <ChevronDownIcon
+            className={`w-3.5 h-3.5 text-carbon-500 transition-transform duration-150 ${
+              open ? "rotate-180" : ""
+            }`}
+          />
         </button>
         {showSelectAllToggle && (
           <button
             type="button"
             onClick={allSelected ? onDeselectAll : onSelectAll}
-            className="text-[9px] font-mono text-carbon-500 hover:text-signal-cyan underline underline-offset-2 transition-colors"
+            className="text-xs text-carbon-400 hover:text-white transition-colors"
           >
             {allSelected ? "Clear all" : "Select all"}
           </button>
@@ -59,24 +60,25 @@ export function AccordionSection({
 }
 
 const TONE_PILL_CLASS = {
-  positive: "bg-signal-green/20 border-signal-green/60 text-signal-green",
-  negative: "bg-signal-red/20 border-signal-red/60 text-signal-red",
-  neutral: "bg-signal-amber/20 border-signal-amber/60 text-signal-amber",
+  positive: "bg-signal-green border-signal-green text-carbon-950",
+  negative: "bg-signal-red border-signal-red text-carbon-950",
+  neutral: "bg-signal-amber border-signal-amber text-carbon-950",
 };
 
 export function Pill({ active, onClick, children, tone }) {
   const activeClass = tone
     ? TONE_PILL_CLASS[tone]
-    : "bg-signal-cyan/20 border-signal-cyan/60 text-signal-cyan";
+    : "bg-carbon-100 border-carbon-100 text-carbon-950";
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border transition-colors ${
+      aria-pressed={!!active}
+      className={`shrink-0 h-7 px-3 inline-flex items-center rounded-full border text-xs font-medium whitespace-nowrap transition-colors ${
         active
           ? activeClass
-          : "bg-carbon-800/60 border-carbon-600/60 text-carbon-400 hover:border-carbon-500 hover:text-carbon-200"
+          : "bg-transparent border-carbon-700 text-carbon-400 hover:border-carbon-500 hover:text-carbon-100"
       }`}
     >
       {children}

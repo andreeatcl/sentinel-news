@@ -5,6 +5,8 @@ import ArticleCard, { SkeletonCard } from "./ArticleCard";
 import { AccordionSection, Pill } from "./FilterAccordion";
 import SortControl from "./SortControl";
 import SearchBar from "./SearchBar";
+import Button from "./ui/Button";
+import EmptyState from "./ui/EmptyState";
 
 const TIME_RANGES = ["48h", "7d", "30d"];
 
@@ -97,7 +99,7 @@ export default function ArticlesTab({
       />
 
       <div className="shrink-0">
-        <AccordionSection title="Time Range" defaultOpen>
+        <AccordionSection title="Time range" defaultOpen>
           {TIME_RANGES.map((t) => (
             <Pill
               key={t}
@@ -147,22 +149,30 @@ export default function ArticlesTab({
                 >
                   Political
                 </Pill>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   onClick={() => setShowKeywordModal(true)}
-                  className="text-[10px] font-mono font-bold text-signal-cyan border border-signal-cyan/40 rounded-full px-2.5 py-1 hover:bg-signal-cyan/10 transition-colors whitespace-nowrap"
+                  className="rounded-full"
                 >
                   Keyword builder
-                </button>
+                </Button>
                 {!!queryPreview && (
-                  <Pill active onClick={clearKeywordQuery}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearKeywordQuery}
+                    className="rounded-full"
+                  >
                     Clear
-                  </Pill>
+                  </Button>
                 )}
               </div>
               {!!queryPreview && (
-                <p className="text-[10px] font-mono text-carbon-500 break-words max-h-12 overflow-y-auto">
-                  Active: {queryPreview}
+                <p className="text-xs text-carbon-500 break-words max-h-12 overflow-y-auto">
+                  Active:{" "}
+                  <span className="font-mono text-carbon-300">
+                    {queryPreview}
+                  </span>
                 </p>
               )}
             </div>
@@ -185,23 +195,18 @@ export default function ArticlesTab({
         )}
 
         {!loading && error && (
-          <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
-            <span className="text-signal-red font-mono text-sm mb-2">
-              ⚠ SIGNAL LOST
-            </span>
-            <p className="text-carbon-500 text-xs font-mono">{error}</p>
-          </div>
+          <EmptyState
+            error
+            title="Couldn't load articles"
+            description={error}
+          />
         )}
 
         {!loading && !error && articles.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-48 px-6 text-center">
-            <span className="text-carbon-600 font-mono text-xs uppercase tracking-widest">
-              No articles found
-            </span>
-            <p className="text-carbon-600 text-[10px] font-mono mt-2">
-              Try adjusting the time range or keywords
-            </p>
-          </div>
+          <EmptyState
+            title="No articles found"
+            description="Try adjusting the time range or keywords."
+          />
         )}
 
         {!loading &&
@@ -209,7 +214,6 @@ export default function ArticlesTab({
             <ArticleCard
               key={article.url || i}
               article={article}
-              index={i}
               onClick={() => onSelectArticle(article)}
             />
           ))}
@@ -217,18 +221,14 @@ export default function ArticlesTab({
 
       {/* Footer */}
       {articles.length > 0 && (
-        <div className="shrink-0 px-4 py-2 border-t border-carbon-700/50 space-y-2">
-          <p className="text-[9px] font-mono text-carbon-600 text-center uppercase tracking-widest">
-            {articles.length} loaded · powered by NewsAPI
+        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2.5 border-t border-carbon-800">
+          <p className="text-xs text-carbon-500">
+            {articles.length} loaded · NewsAPI
           </p>
           {canLoadMore && (
-            <button
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              className="w-full text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-3 py-1.5 hover:border-signal-cyan/60 hover:text-signal-cyan transition-colors disabled:opacity-40"
-            >
-              {loadingMore ? "LOADING…" : "SEE MORE"}
-            </button>
+            <Button size="sm" onClick={onLoadMore} disabled={loadingMore}>
+              {loadingMore ? "Loading…" : "Load more"}
+            </Button>
           )}
         </div>
       )}

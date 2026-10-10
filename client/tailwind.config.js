@@ -1,3 +1,5 @@
+import defaultTheme from "tailwindcss/defaultTheme";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -11,24 +13,61 @@ export default {
   theme: {
     extend: {
       colors: {
+        // neutral dark-grey scale: 950 = app background, 900 = panels,
+        // 850 = raised surfaces / inputs, 800 = hover, 700 = borders,
+        // 500-300 = secondary text, 100 = primary text
         carbon: {
-          950: "#080a0e",
-          900: "#0d1017",
-          800: "#141820",
-          700: "#1c2130",
-          600: "#2e3850",
-          500: "#4b556f",
+          50: "#f6f6f7",
+          100: "#ececee",
+          200: "#d4d4d8",
+          300: "#acacb3",
+          400: "#8a8a92",
+          500: "#66666e",
+          600: "#46464c",
+          700: "#323237",
+          750: "#2a2a2e",
+          800: "#232326",
+          850: "#1d1d20",
+          900: "#18181a",
+          950: "#111113",
         },
+        // brand red: logo, selection, active states
+        accent: {
+          DEFAULT: "#D80027",
+          hover: "#E8173C",
+        },
+        // status colors, tuned to be readable as text on dark surfaces
         signal: {
-          cyan: "#D80027",
-          red: "#D80027",
-          amber: "#f59e0b",
-          green: "#22c55e",
+          red: "#F2455F",
+          amber: "#F5A524",
+          green: "#3DD07A",
         },
       },
       fontFamily: {
-        display: ["Rajdhani", "sans-serif"],
-        body: ["Inter", "sans-serif"],
+        sans: ["Geist Variable", ...defaultTheme.fontFamily.sans],
+        mono: ["Geist Mono Variable", ...defaultTheme.fontFamily.mono],
+      },
+      fontSize: {
+        "2xs": ["11px", { lineHeight: "16px" }],
+      },
+      boxShadow: {
+        panel:
+          "0 24px 64px -16px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(255 255 255 / 0.03)",
+        pop: "0 12px 32px -8px rgb(0 0 0 / 0.6)",
+      },
+      keyframes: {
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "pop-in": {
+          from: { opacity: "0", transform: "translateY(6px) scale(0.98)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+      },
+      animation: {
+        "fade-in": "fade-in 150ms ease-out",
+        "pop-in": "pop-in 200ms cubic-bezier(0.22, 1, 0.36, 1)",
       },
     },
   },

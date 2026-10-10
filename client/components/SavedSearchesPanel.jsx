@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { getSavedSearches, removeSavedSearch } from "../utils/storage";
+import Modal from "./ui/Modal";
+import Button from "./ui/Button";
+import EmptyState from "./ui/EmptyState";
 
 export default function SavedSearchesPanel({ isOpen, onClose, onRun }) {
   const [savedSearches, setSavedSearches] = useState([]);
@@ -18,76 +21,47 @@ export default function SavedSearchesPanel({ isOpen, onClose, onRun }) {
     onClose();
   }
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm px-3"
-      onClick={onClose}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Saved searches"
+      subtitle="Stored on this device"
     >
-      <div
-        className="w-full max-w-lg max-h-[85vh] bg-carbon-900 border border-carbon-700/80 rounded-lg flex flex-col shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-carbon-700/70 shrink-0">
-          <div>
-            <h1 className="font-display text-white tracking-widest text-xl leading-none">
-              SAVED SEARCHES
-            </h1>
-            <p className="text-[10px] font-mono text-carbon-500 mt-1 uppercase tracking-widest">
-              Stored on this device
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-carbon-500 hover:text-white transition-colors text-2xl leading-none w-10 h-10 flex items-center justify-center"
+      {savedSearches.length === 0 ? (
+        <EmptyState
+          title="No saved searches yet"
+          description="Open a country's feed and use Save search to add one."
+        />
+      ) : (
+        savedSearches.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center justify-between gap-3 px-5 py-3 border-b border-carbon-800 last:border-b-0 hover:bg-carbon-850 transition-colors group"
           >
-            ×
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
-          {savedSearches.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 px-6 text-center">
-              <span className="text-carbon-600 font-mono text-xs uppercase tracking-widest">
-                No saved searches yet
-              </span>
-              <p className="text-carbon-600 text-[10px] font-mono mt-2">
-                Open a country's feed and use "Save search" to add one
+            <button
+              onClick={() => handleRun(item)}
+              className="min-w-0 flex-1 text-left"
+            >
+              <p className="text-sm font-medium text-carbon-100 group-hover:text-white leading-snug truncate transition-colors">
+                {item.label}
               </p>
-            </div>
-          ) : (
-            savedSearches.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between gap-3 px-6 py-3 border-b border-carbon-700/50"
-              >
-                <button
-                  onClick={() => handleRun(item)}
-                  className="min-w-0 flex-1 text-left hover:text-signal-cyan transition-colors"
-                >
-                  <p className="text-sm font-body text-white leading-snug truncate">
-                    {item.label}
-                  </p>
-                  {item.extraKeywords && (
-                    <p className="text-[10px] font-mono text-carbon-500 truncate mt-0.5">
-                      {item.extraKeywords}
-                    </p>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleRemove(item.id)}
-                  className="text-carbon-500 hover:text-signal-red transition-colors text-xs shrink-0"
-                >
-                  Remove
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
+              {item.extraKeywords && (
+                <p className="text-xs font-mono text-carbon-500 truncate mt-0.5">
+                  {item.extraKeywords}
+                </p>
+              )}
+            </button>
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => handleRemove(item.id)}
+            >
+              Remove
+            </Button>
+          </div>
+        ))
+      )}
+    </Modal>
   );
 }

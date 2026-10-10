@@ -5,6 +5,8 @@ import { AccordionSection, Pill } from "./FilterAccordion";
 import SortControl from "./SortControl";
 import SearchBar from "./SearchBar";
 import EventsList from "./EventsList";
+import Button from "./ui/Button";
+import { Input } from "./ui/Field";
 
 const TIME_RANGES = ["48h", "7d", "30d"];
 
@@ -106,7 +108,7 @@ export default function EventsTab({
       />
 
       <div className="shrink-0">
-        <AccordionSection title="Time Range" defaultOpen>
+        <AccordionSection title="Time range" defaultOpen>
           {TIME_RANGES.map((t) => (
             <Pill
               key={t}
@@ -193,12 +195,13 @@ export default function EventsTab({
         {/* Client-side only (filters what's already loaded) — instant,
             no request, so it's live rather than gated behind Search */}
         <AccordionSection title="Keyword" activeCount={keyword ? 1 : 0}>
-          <input
+          <Input
+            size="sm"
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="Filter loaded events…"
-            className="w-full bg-carbon-800 border border-carbon-600/60 text-white text-xs font-body rounded px-2.5 py-1.5 outline-none focus:border-signal-cyan/60 placeholder:text-carbon-500"
+            className="w-full"
           />
         </AccordionSection>
       </div>
@@ -217,22 +220,22 @@ export default function EventsTab({
       </div>
 
       {events.length > 0 && (
-        <div className="shrink-0 px-4 py-2 border-t border-carbon-700/50 space-y-2">
-          <p className="text-[9px] font-mono text-carbon-600 text-center uppercase tracking-widest">
-            {visibleEvents.length} of {events.length} events · powered by GDELT
+        <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2.5 border-t border-carbon-800">
+          <p className="text-xs text-carbon-500">
+            {visibleEvents.length} of {events.length} events · GDELT
           </p>
           {eventsHasMore && (
-            <button
+            <Button
+              size="sm"
               onClick={handleLoadMoreClick}
               disabled={eventsLoadingMore || loadMoreCooldown}
-              className="w-full text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-3 py-1.5 hover:border-signal-cyan/60 hover:text-signal-cyan transition-colors disabled:opacity-40"
             >
               {eventsLoadingMore
-                ? "LOADING…"
+                ? "Loading…"
                 : loadMoreCooldown
-                  ? "WAIT A MOMENT…"
-                  : "LOAD MORE"}
-            </button>
+                  ? "Wait a moment…"
+                  : "Load more"}
+            </Button>
           )}
         </div>
       )}

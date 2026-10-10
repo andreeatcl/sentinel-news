@@ -1,4 +1,11 @@
 import { useState } from "react";
+import Button, { IconButton } from "./ui/Button";
+import { CheckIcon, CloseIcon } from "./ui/icons";
+
+const TABS = [
+  { id: "events", label: "Events" },
+  { id: "articles", label: "Articles" },
+];
 
 export default function PanelHeader({
   selectedCountry,
@@ -19,70 +26,77 @@ export default function PanelHeader({
   }
 
   return (
-    <div className="flex items-end justify-between gap-3 px-4 pt-3 bg-carbon-950/60 border-b border-carbon-700/70 shrink-0">
-      <div className="flex items-end gap-3 min-w-0">
-        <div className="pb-2.5 min-w-0">
+    <div className="shrink-0 border-b border-carbon-800">
+      <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             {loading && (
-              <span className="w-1.5 h-1.5 rounded-full bg-signal-amber pulse-dot" />
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-amber shrink-0" />
             )}
             {!loading && hasArticles && (
-              <span className="w-1.5 h-1.5 rounded-full bg-signal-green" />
+              <span className="w-1.5 h-1.5 rounded-full bg-signal-green shrink-0" />
             )}
-            <span className="font-display text-white tracking-widest text-base truncate">
-              {selectedCountry || "MONITOR"}
-            </span>
+            <h2 className="text-lg font-semibold tracking-tight text-white truncate">
+              {selectedCountry || "Search results"}
+            </h2>
           </div>
           {meta && (
-            <p className="text-[10px] font-mono text-carbon-500 mt-0.5 truncate">
+            <p className="text-xs text-carbon-500 mt-0.5 truncate">
               {meta.totalResults?.toLocaleString()} results
               {meta.cached ? ` · cached ${meta.cacheAge}s ago` : ""}
             </p>
           )}
         </div>
 
-        {selectedCountry && (
-          <div className="flex items-end gap-1 shrink-0">
-            {[
-              { id: "events", label: "Events" },
-              { id: "articles", label: "Articles" },
-            ].map((tab) => {
-              const active = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabClick(tab.id)}
-                  className={`text-[11px] font-mono font-bold uppercase tracking-widest px-4 py-2 rounded-t-lg border transition-colors ${
-                    active
-                      ? "bg-carbon-900 text-signal-cyan border-carbon-700/70 border-b-carbon-900 -mb-px relative z-10"
-                      : "bg-carbon-800/50 text-carbon-500 border-transparent hover:text-carbon-300 hover:bg-carbon-800"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
+        <div className="flex items-center gap-1 shrink-0 -mr-1.5">
+          {selectedCountry && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleSaveSearchClick}
+              title="Save this search"
+            >
+              {savedFlash ? (
+                <>
+                  <CheckIcon className="w-3.5 h-3.5" />
+                  Saved
+                </>
+              ) : (
+                "Save search"
+              )}
+            </Button>
+          )}
+          <IconButton label="Close panel" onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        </div>
       </div>
 
-      <div className="flex items-center gap-1 shrink-0 pb-2.5">
-        {selectedCountry && (
-          <button
-            onClick={handleSaveSearchClick}
-            title="Save this search"
-            className="text-carbon-500 hover:text-signal-amber transition-colors text-lg leading-none w-8 h-8 flex items-center justify-center"
-          >
-            {savedFlash ? "✓" : "☆"}
-          </button>
-        )}
-        <button
-          onClick={onClose}
-          className="text-carbon-500 hover:text-white transition-colors text-xl leading-none w-8 h-8 flex items-center justify-center"
-        >
-          ×
-        </button>
-      </div>
+      {selectedCountry && (
+        <div className="flex items-center gap-5 px-4" role="tablist">
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-selected={active}
+                onClick={() => onTabClick(tab.id)}
+                className={`relative h-9 text-sm font-medium transition-colors ${
+                  active
+                    ? "text-white"
+                    : "text-carbon-500 hover:text-carbon-200"
+                }`}
+              >
+                {tab.label}
+                {active && (
+                  <span className="absolute left-0 right-0 -bottom-px h-0.5 rounded-full bg-accent" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,7 @@
+import Button from "./ui/Button";
+import { Eyebrow } from "./ui/Field";
+import { CheckIcon } from "./ui/icons";
+
 export default function KeywordGrid({
   keywords,
   selectedKeywords,
@@ -7,30 +11,20 @@ export default function KeywordGrid({
 }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-2 gap-2">
-        <p className="text-[10px] font-mono text-carbon-500 uppercase tracking-widest">
-          Country keyword options
-        </p>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onSelectAll}
-            className="text-[10px] font-mono font-bold text-carbon-300 border border-carbon-600/70 rounded px-2 py-1 hover:border-carbon-500 transition-colors"
-          >
-            SELECT ALL
-          </button>
-          <button
-            type="button"
-            onClick={onDeselectAll}
-            className="text-[10px] font-mono font-bold text-carbon-400 border border-carbon-600/70 rounded px-2 py-1 hover:border-carbon-500 transition-colors"
-          >
-            DESELECT ALL
-          </button>
+      <div className="flex items-center justify-between mb-2.5 gap-2">
+        <Eyebrow>Country keywords</Eyebrow>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={onSelectAll}>
+            Select all
+          </Button>
+          <Button size="sm" variant="ghost" onClick={onDeselectAll}>
+            Deselect all
+          </Button>
         </div>
       </div>
 
       {keywords.length === 0 ? (
-        <div className="text-[11px] font-mono text-carbon-600 border border-carbon-700/60 rounded px-3 py-2">
+        <div className="text-sm text-carbon-500 border border-dashed border-carbon-700 rounded-lg px-3 py-3">
           No predefined keywords available for this country.
         </div>
       ) : (
@@ -40,21 +34,30 @@ export default function KeywordGrid({
             return (
               <label
                 key={keyword}
-                className={`flex items-center gap-2 px-2.5 py-2 border rounded cursor-pointer transition-colors ${
+                className={`flex items-center gap-2.5 h-9 px-3 border rounded-md cursor-pointer select-none transition-colors ${
                   active
-                    ? "border-signal-cyan/60 bg-signal-cyan/10"
-                    : "border-carbon-700/70 bg-carbon-800/40 hover:border-carbon-600"
+                    ? "border-carbon-300 bg-white/10"
+                    : "border-carbon-800 bg-carbon-850 hover:border-carbon-700"
                 }`}
               >
                 <input
                   type="checkbox"
                   checked={active}
                   onChange={() => onToggleKeyword(keyword)}
-                  className="accent-signal-cyan"
+                  className="sr-only peer"
                 />
                 <span
-                  className={`text-[11px] font-mono leading-tight ${
-                    active ? "text-signal-cyan" : "text-carbon-300"
+                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-white/40 ${
+                    active
+                      ? "bg-white border-white text-carbon-950"
+                      : "border-carbon-600"
+                  }`}
+                >
+                  {active && <CheckIcon className="w-3 h-3" strokeWidth={3} />}
+                </span>
+                <span
+                  className={`text-xs truncate ${
+                    active ? "text-white" : "text-carbon-300"
                   }`}
                 >
                   {keyword}

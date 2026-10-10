@@ -39,8 +39,6 @@ export default function MonitorPanel({
   onSelectArticle,
   onOpenArticlesTab,
 }) {
-  // Events first — it's keyless/free, unlike Articles (NewsAPI, quota-
-  // limited), which only fetches once its tab is actually opened.
   const [activeTab, setActiveTab] = useState("events");
 
   useEffect(() => {
@@ -55,10 +53,7 @@ export default function MonitorPanel({
   const showEventsTab = activeTab === "events" && !!selectedCountry;
 
   return (
-    <div
-      className="sidebar-enter absolute z-[1100] flex flex-col bg-carbon-900 border border-carbon-700/70 rounded-2xl shadow-2xl overflow-hidden"
-      style={{ left: "10%", right: "10%", top: "72px", bottom: "16px" }}
-    >
+    <div className="panel-enter absolute z-[1100] inset-x-3 md:inset-x-[10%] top-16 bottom-3 flex flex-col bg-carbon-900 border border-carbon-800 rounded-xl shadow-panel overflow-hidden">
       <PanelHeader
         selectedCountry={selectedCountry}
         loading={loading}

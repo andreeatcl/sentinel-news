@@ -30,7 +30,6 @@ export default function App() {
     useTopSourcesOnly,
     englishOnly,
     stateMediaPriority,
-    isMobile,
     articles,
     loading,
     loadingMore,
@@ -138,7 +137,6 @@ export default function App() {
         onFavoritesClick={() => setShowFavorites(true)}
         onSavedSearchesClick={() => setShowSavedSearches(true)}
         onBackupClick={() => setShowBackup(true)}
-        isMobile={isMobile}
       />
 
       {/* Events/Articles panel — near-fullscreen overlay, not a docked sidebar */}
@@ -183,12 +181,9 @@ export default function App() {
 
       {/* Bottom HUD bar — hidden once the panel covers the screen */}
       {!panelOpen && (
-        <div className="absolute bottom-0 left-0 right-0 z-[998] flex items-center justify-between px-4 py-2 pointer-events-none">
-          <span className="text-[9px] font-mono text-carbon-600 uppercase tracking-widest hidden sm:inline">
-            Click any country to monitor
-          </span>
-          <span className="text-[9px] font-mono text-carbon-700 uppercase tracking-widest">
-            SENTINEL v1.0 · Global News Monitor
+        <div className="absolute bottom-3 left-3 z-[998] flex items-center gap-3 pointer-events-none">
+          <span className="hidden sm:inline text-2xs text-carbon-300 bg-carbon-900/90 border border-carbon-800 rounded-full px-3 py-1 backdrop-blur-md">
+            Select a country to start monitoring
           </span>
         </div>
       )}

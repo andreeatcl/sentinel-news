@@ -17,6 +17,12 @@ export const TONE_TEXT_CLASS = {
   neutral: "text-signal-amber",
 };
 
+export const TONE_DOT_CLASS = {
+  positive: "bg-signal-green",
+  negative: "bg-signal-red",
+  neutral: "bg-signal-amber",
+};
+
 export const TONE_LABELS = {
   positive: "Cooperative",
   negative: "Conflict-leaning",

@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, GeoJSON, CircleMarker } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  GeoJSON,
+  CircleMarker,
+  ZoomControl,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { toneCategory, TONE_HEX } from "../utils/eventTone";
 
@@ -84,14 +90,14 @@ function GeoJSONLayer({ geoData, selectedCountry, onCountryClick }) {
           fillOpacity: 0.2,
           opacity: 0.9,
         });
+        // styled by .leaflet-tooltip-dark in index.css
         e.target
-          .bindTooltip(
-            `<span style="font-family:'JetBrains Mono',monospace;font-size:11px;` +
-              `letter-spacing:0.1em;color:${ACCENT_RED};background:#0d1017;` +
-              `border:1px solid ${ACCENT_RED};padding:4px 8px;border-radius:2px;">` +
-              `${name.toUpperCase()}</span>`,
-            { sticky: true, className: "leaflet-tooltip-dark" },
-          )
+          .bindTooltip(name, {
+            sticky: true,
+            direction: "top",
+            offset: [0, -8],
+            className: "leaflet-tooltip-dark",
+          })
           .openTooltip();
       },
       mouseout(e) {
@@ -185,11 +191,13 @@ export default function WorldMap({
         minZoom={2}
         maxZoom={10}
         style={{ width: "100%", height: "100%" }}
-        zoomControl={true}
+        zoomControl={false}
         attributionControl={true}
         worldCopyJump={false}
       >
         <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} />
+        {/* top-left is covered by the HUD */}
+        <ZoomControl position="bottomright" />
         {geoData && (
           <GeoJSONLayer
             geoData={geoData}
@@ -202,16 +210,14 @@ export default function WorldMap({
 
       {/* GeoJSON loading overlay */}
       {!geoData && !geoError && (
-        <div className="absolute bottom-10 left-4 z-[999] flex items-center gap-2 bg-carbon-900/90 border border-carbon-700/60 rounded px-3 py-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-signal-amber pulse-dot" />
-          <span className="text-[10px] font-mono text-carbon-400 uppercase tracking-widest">
-            Loading borders…
-          </span>
+        <div className="absolute bottom-12 left-3 z-[999] flex items-center gap-2 bg-carbon-900/90 border border-carbon-800 rounded-full px-3 py-1 backdrop-blur-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-signal-amber" />
+          <span className="text-2xs text-carbon-300">Loading borders…</span>
         </div>
       )}
       {geoError && (
-        <div className="absolute bottom-10 left-4 z-[999] bg-carbon-900/90 border border-signal-red/40 rounded px-3 py-1.5">
-          <span className="text-[10px] font-mono text-signal-red">
+        <div className="absolute bottom-12 left-3 z-[999] bg-carbon-900/90 border border-signal-red/30 rounded-lg px-3 py-1.5 backdrop-blur-md">
+          <span className="text-2xs text-signal-red">
             Failed to load country borders (check
             /public/data/countries.geojson)
           </span>

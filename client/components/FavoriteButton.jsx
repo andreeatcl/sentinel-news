@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { isFavorite, addFavorite, removeFavorite } from "../utils/storage";
+import { StarIcon } from "./ui/icons";
 
 // reads/writes to localStorage directly instead of carrying fav state through props
 export default function FavoriteButton({ article }) {
@@ -16,18 +17,22 @@ export default function FavoriteButton({ article }) {
     setFavorited(!favorited);
   }
 
+  const label = favorited ? "Remove from favorites" : "Save to favorites";
+
   return (
     <button
       type="button"
       onClick={toggle}
-      title={favorited ? "Remove from favorites" : "Save to favorites"}
-      className={`text-sm leading-none transition-colors ${
+      title={label}
+      aria-label={label}
+      aria-pressed={favorited}
+      className={`w-7 h-7 inline-flex items-center justify-center rounded-md transition-colors hover:bg-carbon-800 ${
         favorited
           ? "text-signal-amber"
-          : "text-carbon-600 hover:text-signal-amber"
+          : "text-carbon-500 hover:text-carbon-100"
       }`}
     >
-      {favorited ? "★" : "☆"}
+      <StarIcon filled={favorited} className="w-4 h-4" />
     </button>
   );
 }
